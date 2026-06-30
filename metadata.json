@@ -1,0 +1,6 @@
+{
+  "name": "KrishiDrishti",
+  "description": "Smart Multilingual Indian Farmer Assistant for Crop Health Diagnosis and Mandi Price Analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
