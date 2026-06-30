@@ -27,12 +27,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
+import android.os.Build
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -335,13 +342,81 @@ fun AdvisoryDetailsDialog(
     onDismiss: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val formattedDate = remember(scanItem.timestamp) {
         val sdf = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
         sdf.format(Date(scanItem.timestamp))
     }
 
+    // --- TTS LOCAL ENGINE SETUP ---
+    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+    var isTtsReady by remember { mutableStateOf(false) }
+    var isSpeaking by remember { mutableStateOf(false) }
+
+    DisposableEffect(context) {
+        val speech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                isTtsReady = true
+            }
+        }
+        tts = speech
+        onDispose {
+            speech.stop()
+            speech.shutdown()
+        }
+    }
+
+    fun speakAdvice(text: String, language: String) {
+        val speech = tts ?: return
+        if (!isTtsReady) return
+        
+        val locale = when (language) {
+            "Hindi (हिन्दी)" -> Locale("hi", "IN")
+            "Telugu (తెలుగు)" -> Locale("te", "IN")
+            "Tamil (தமிழ்)" -> Locale("ta", "IN")
+            "Marathi (మరాठी)" -> Locale("mr", "IN")
+            "Bengali (বাংলা)" -> Locale("bn", "IN")
+            "Kannada (ಕನ್ನಡ)" -> Locale("kn", "IN")
+            "Gujarati (గుજરાતી)" -> Locale("gu", "IN")
+            "Malayalam (മലയാളം)" -> Locale("ml", "IN")
+            "Punjabi (ਪੰਜਾਬੀ)" -> Locale("pa", "IN")
+            "Odia (ଓଡ଼ିଆ)" -> Locale("or", "IN")
+            else -> Locale.ENGLISH
+        }
+        
+        speech.language = locale
+        isSpeaking = true
+
+        speech.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {
+                isSpeaking = true
+            }
+            override fun onDone(utteranceId: String?) {
+                isSpeaking = false
+            }
+            override fun onError(utteranceId: String?) {
+                isSpeaking = false
+            }
+        })
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            speech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "HistoryTTS")
+        } else {
+            @Suppress("DEPRECATION")
+            speech.speak(text, TextToSpeech.QUEUE_FLUSH, null)
+        }
+    }
+
+    fun stopSpeaking() {
+        tts?.stop()
+        isSpeaking = false
+    }
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            stopSpeaking()
+            onDismiss()
+        },
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -387,22 +462,50 @@ fun AdvisoryDetailsDialog(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                // Language tag
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = scanItem.language,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    // Language tag
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = scanItem.language,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    // Floating TTS button
+                    IconButton(
+                        onClick = {
+                            if (isSpeaking) {
+                                stopSpeaking()
+                            } else {
+                                speakAdvice(scanItem.advice, scanItem.language)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (isSpeaking) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    ) {
+                        Icon(
+                            imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.VolumeUp,
+                            contentDescription = if (isSpeaking) "Stop Narration" else "Listen to Report",
+                            tint = if (isSpeaking) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -439,13 +542,19 @@ fun AdvisoryDetailsDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(onClick = {
+                stopSpeaking()
+                onDismiss()
+            }) {
                 Text("Close")
             }
         },
         dismissButton = {
             TextButton(
-                onClick = onDelete,
+                onClick = {
+                    stopSpeaking()
+                    onDelete()
+                },
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
