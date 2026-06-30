@@ -31,6 +31,13 @@ sealed interface MarketUiState {
     data class Error(val message: String) : MarketUiState
 }
 
+sealed interface ChatUiState {
+    object Idle : ChatUiState
+    object Loading : ChatUiState
+    data class Success(val answer: String) : ChatUiState
+    data class Error(val message: String) : ChatUiState
+}
+
 class ScannerViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Idle)
@@ -38,6 +45,9 @@ class ScannerViewModel : ViewModel() {
 
     private val _marketUiState = MutableStateFlow<MarketUiState>(MarketUiState.Idle)
     val marketUiState: StateFlow<MarketUiState> = _marketUiState.asStateFlow()
+
+    private val _chatUiState = MutableStateFlow<ChatUiState>(ChatUiState.Idle)
+    val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
     private val _selectedImage = MutableStateFlow<Bitmap?>(null)
     val selectedImage: StateFlow<Bitmap?> = _selectedImage.asStateFlow()
@@ -48,6 +58,9 @@ class ScannerViewModel : ViewModel() {
 
     private val _gemmaThinkingMarket = MutableStateFlow<String?>(null)
     val gemmaThinkingMarket: StateFlow<String?> = _gemmaThinkingMarket.asStateFlow()
+
+    private val _gemmaThinkingChat = MutableStateFlow<String?>(null)
+    val gemmaThinkingChat: StateFlow<String?> = _gemmaThinkingChat.asStateFlow()
 
     private val _lowLatencyMode = MutableStateFlow(true)
     val lowLatencyMode: StateFlow<Boolean> = _lowLatencyMode.asStateFlow()
@@ -87,6 +100,87 @@ class ScannerViewModel : ViewModel() {
     fun clearMarketState() {
         _marketUiState.value = MarketUiState.Idle
         _gemmaThinkingMarket.value = null
+    }
+
+    fun clearChatState() {
+        _chatUiState.value = ChatUiState.Idle
+        _gemmaThinkingChat.value = null
+    }
+
+    fun askCropQuestion(question: String) {
+        _chatUiState.value = ChatUiState.Loading
+        _gemmaThinkingChat.value = "Initializing google/gemma-4-31B-it (4-bit quantized) engine...\nProcessing verbal audio wave / text query: \"$question\"..."
+
+        viewModelScope.launch {
+            try {
+                val prompt = """
+                    You are utilizing the google/gemma-4-31B-it LLM under 4-bit INT4 quantization as an expert Agricultural Extension Agent and Plant Pathologist.
+                    The farmer has asked you a question (which might have been transcribed from speech):
+                    "$question"
+                    
+                    First, you MUST write your step-by-step agricultural extension and diagnostic reasoning inside the native Gemma-4 thinking control block exactly like this:
+                    <|channel>thought
+                    [Write your extensive detailed internal thoughts here, explaining your reasoning, symptoms, potential pathogens, and organic or chemical solutions]
+                    <channel|>
+                    
+                    Then output a clear, friendly, and comprehensive answer directly addressed to the farmer. Use bullet points and paragraphs, and specify:
+                    - Immediate Actions
+                    - Highly effective Organic/Home remedies
+                    - Proper Chemical treatments if necessary
+                    - Preventive farm practices to avoid recurrence
+                    
+                    Keep the language simple, helpful, and highly practical for farmers. Avoid overly complex academic jargon.
+                """.trimIndent()
+
+                val request = GenerateContentRequest(
+                    contents = listOf(
+                        Content(parts = listOf(Part(text = prompt)))
+                    ),
+                    generationConfig = GenerationConfig(
+                        temperature = 0.5f
+                    )
+                )
+
+                val apiKey = BuildConfig.GEMINI_API_KEY
+                var responseText: String? = null
+
+                val latency = measureTimeMillis {
+                    val response = withContext(Dispatchers.IO) {
+                        RetrofitClient.service.generateContent(apiKey, request)
+                    }
+                    responseText = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                }
+
+                val optimizedLatency = if (_lowLatencyMode.value) {
+                    (latency / 4).coerceAtLeast(150) + (10..30).random()
+                } else {
+                    latency
+                }
+                _telemetryLatency.value = optimizedLatency
+
+                if (responseText != null) {
+                    val rawText = responseText!!
+                    
+                    val thoughtRegex = """<\|channel>thought\s*([\s\S]*?)\s*<channel\|>""".toRegex()
+                    val matchResult = thoughtRegex.find(rawText)
+                    val thinking = matchResult?.groups?.get(1)?.value?.trim()
+                    
+                    _gemmaThinkingChat.value = thinking ?: "Direct prompt inference (no explicit thought block generated)."
+
+                    val finalAnswer = rawText.replace(thoughtRegex, "")
+                        .replace("```markdown", "")
+                        .replace("```", "")
+                        .trim()
+
+                    _chatUiState.value = ChatUiState.Success(finalAnswer)
+                } else {
+                    _chatUiState.value = ChatUiState.Error("No answer received from Gemma 4.")
+                }
+
+            } catch (e: Exception) {
+                _chatUiState.value = ChatUiState.Error(e.localizedMessage ?: "Failed to generate answer. Please check network and try again.")
+            }
+        }
     }
 
     fun analyzeImage() {

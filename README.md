@@ -1,21 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 🌾 Crop Disease Scanner & AI Voice Advisor
 
-# Run and deploy your AI Studio app
+> **An Intelligent Offline-Quantized Extension Suite for Modern Agriculture**
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/21e21797-7aea-40a1-b538-0f83747d9815
+## 🚀 Key Modules
 
-## Run Locally
+### 📸 1. Crop Pathology Scanner
+- **Real-Time Analysis:** Capture leaf symptoms instantly using the high-precision device camera.
+- **Dynamic Diagnostics:** Direct disease identification powered by the Gemma/Gemini engine.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+### 🎙️ 2. AI Voice Q&A Advisor
+- **Farmer-Friendly Speech:** Tap to ask crop-health questions verbally in Hindi or English.
+- **Transcribed Responses:** Immediate expert guidance covering immediate actions, organic remedies, and preventive measures.
 
+### 📈 3. Market Price Advisor
+- **Price Forecasting:** Predict future market prices per quintal for key crops.
+- **Visualized Trends:** High-fidelity interactive trend chart displaying projected peak, floor, and daily fluctuations.
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+---
+
+## 🛠️ Tech Stack & Architecture
+- **Framework:** Jetpack Compose & Kotlin
+- **Design System:** Material Design 3 (M3)
+- **Engine:** Google Gemma & Gemini REST Integration

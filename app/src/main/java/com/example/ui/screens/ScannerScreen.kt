@@ -62,7 +62,9 @@ import com.example.data.model.DailyPricePrediction
 import com.example.ui.theme.ForestGreen
 import com.example.ui.viewmodel.ScannerUiState
 import com.example.ui.viewmodel.MarketUiState
+import com.example.ui.viewmodel.ChatUiState
 import com.example.ui.viewmodel.ScannerViewModel
+import androidx.compose.ui.graphics.graphicsLayer
 import java.io.InputStream
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -76,6 +78,7 @@ fun ScannerScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val marketUiState by viewModel.marketUiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val selectedImage by viewModel.selectedImage.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) }
@@ -124,22 +127,19 @@ fun ScannerScreen(
                                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = when (activeTab) {
-                                    0 -> Icons.Default.Search
-                                    1 -> Icons.Default.List
-                                    else -> Icons.Default.Settings
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            when (activeTab) {
+                                0 -> CameraIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                1 -> MicIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                2 -> TrendingUpIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                else -> Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
                         }
                         Column {
                             Text(
                                 text = when (activeTab) {
                                     0 -> "Crop Pathology Scanner"
-                                    1 -> "Market Price Advisor"
+                                    1 -> "AI Voice Q&A Advisor"
+                                    2 -> "Market Price Advisor"
                                     else -> "Gemma 4 Config"
                                 },
                                 fontWeight = FontWeight.Bold,
@@ -181,20 +181,26 @@ fun ScannerScreen(
                 NavigationBarItem(
                     selected = activeTab == 0,
                     onClick = { activeTab = 0 },
-                    icon = { Icon(Icons.Default.Search, contentDescription = "AI Scan") },
-                    label = { Text("AI Scan", fontWeight = FontWeight.Bold) }
+                    icon = { CameraIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("AI Scan", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 1,
                     onClick = { activeTab = 1 },
-                    icon = { Icon(Icons.Default.List, contentDescription = "Market Prediction") },
-                    label = { Text("Market predict", fontWeight = FontWeight.Bold) }
+                    icon = { MicIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("AI Voice Q&A", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 2,
                     onClick = { activeTab = 2 },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Engine Control") },
-                    label = { Text("Gemma Engine", fontWeight = FontWeight.Bold) }
+                    icon = { TrendingUpIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Market predict", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                )
+                NavigationBarItem(
+                    selected = activeTab == 3,
+                    onClick = { activeTab = 3 },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Engine Control", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Gemma Engine", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
                 )
             }
         },
@@ -242,14 +248,21 @@ fun ScannerScreen(
                     }
                 }
                 1 -> {
-                    // TAB 1: MARKET PRICE FORECAST HUB
+                    // TAB 1: SPEECH PATHOLOGY / CROP HEALTH Q&A
+                    SpeechQAView(
+                        viewModel = viewModel,
+                        uiState = chatUiState
+                    )
+                }
+                2 -> {
+                    // TAB 2: MARKET PRICE FORECAST HUB
                     MarketHubView(
                         viewModel = viewModel,
                         uiState = marketUiState
                     )
                 }
-                2 -> {
-                    // TAB 2: GEMMA ENGINE HARDWARE MONITOR
+                3 -> {
+                    // TAB 3: GEMMA ENGINE HARDWARE MONITOR
                     GemmaEngineConfigView(viewModel = viewModel)
                 }
             }
@@ -1746,17 +1759,67 @@ fun CropPriceChart(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // X-Axis Text Labels
+            // Aligned Day and Price stack labels
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 predictions.forEach { pred ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = pred.day,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "₹${pred.price.toInt()}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF2E7D32)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Peak and Floor price trend summary metrics
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(Color(0xFF2E7D32), CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = pred.day,
-                        fontSize = 11.sp,
+                        text = "Projected Peak: ₹${maxPrice.toInt()}/q",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF2E7D32)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(Color(0xFFC62828), CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Projected Floor: ₹${minPrice.toInt()}/q",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFC62828)
                     )
                 }
             }
@@ -1949,6 +2012,462 @@ fun TerminalInfoRow(label: String, value: String) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF00E676)
+        )
+    }
+}
+
+@Composable
+fun SpeechQAView(
+    viewModel: ScannerViewModel,
+    uiState: ChatUiState
+) {
+    val context = LocalContext.current
+    var questionText by remember { mutableStateOf("") }
+    val gemmaThinking by viewModel.gemmaThinkingChat.collectAsState()
+    val latency by viewModel.telemetryLatency.collectAsState()
+    val quantizationMode by viewModel.quantizationMode.collectAsState()
+    val scrollState = rememberScrollState()
+
+    var isListening by remember { mutableStateOf(false) }
+
+    val speechRecognizerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        isListening = false
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spokenText = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spokenText.isNullOrBlank()) {
+                questionText = spokenText
+                viewModel.askCropQuestion(spokenText)
+            }
+        }
+    }
+
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasAudioPermission = isGranted
+        if (isGranted) {
+            isListening = true
+            val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Ask any crop disease or farm question now...")
+            }
+            try {
+                speechRecognizerLauncher.launch(intent)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Voice recognition is not available on this device", android.widget.Toast.LENGTH_SHORT).show()
+                isListening = false
+            }
+        } else {
+            android.widget.Toast.makeText(context, "Microphone permission is required for voice query.", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val quickQuestions = listOf(
+        "Why are my tomato leaves turning yellow?",
+        "Organic solution for rice blast disease",
+        "How to prevent powdery mildew in wheat?",
+        "Biological cure for potato root rot",
+        "Best pesticide for cotton whitefly"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Crop Health Voice Advisor",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Verbal extension advisor designed for farmers. Speak or write your crop pathological symptoms for step-by-step guidance.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(110.dp)
+                ) {
+                    val infiniteTransition = rememberInfiniteTransition(label = "micPulse")
+                    val pulseScale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = if (isListening) 1.5f else 1.2f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "pulseScale"
+                    )
+                    val pulseAlpha by infiniteTransition.animateFloat(
+                        initialValue = 0.4f,
+                        targetValue = 0.05f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "pulseAlpha"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = pulseScale,
+                                scaleY = pulseScale,
+                                alpha = pulseAlpha
+                            )
+                            .background(
+                                color = if (isListening) Color(0xFFFF5252) else MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
+                            )
+                    )
+
+                    IconButton(
+                        onClick = {
+                            if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.RECORD_AUDIO
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                isListening = true
+                                val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Ask about your crop health now...")
+                                }
+                                try {
+                                    speechRecognizerLauncher.launch(intent)
+                                } catch (e: Exception) {
+                                    android.widget.Toast.makeText(context, "Voice recognition is not available", android.widget.Toast.LENGTH_SHORT).show()
+                                    isListening = false
+                                }
+                            } else {
+                                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        },
+                        modifier = Modifier
+                            .size(76.dp)
+                            .background(
+                                color = if (isListening) Color(0xFFFF1744) else MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
+                            )
+                            .testTag("speech_mic_button")
+                    ) {
+                        MicIcon(modifier = Modifier.size(36.dp), tint = Color.White)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = if (isListening) "Listening carefully..." else "TAP TO SPEAK (HINDI/ENGLISH)",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (isListening) Color(0xFFFF1744) else MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = questionText,
+                    onValueChange = { questionText = it },
+                    label = { Text("Or Type Crop Symptom/Question") },
+                    placeholder = { Text("e.g., Rice leaves have brown spots") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        if (questionText.isNotBlank()) {
+                            IconButton(onClick = {
+                                viewModel.askCropQuestion(questionText)
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Send",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Common Farmer Inquiries:",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    quickQuestions.forEach { query ->
+                        FilterChip(
+                            selected = questionText.equals(query, ignoreCase = true),
+                            onClick = {
+                                questionText = query
+                                viewModel.askCropQuestion(query)
+                            },
+                            label = { Text(query, fontSize = 11.sp) }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (uiState) {
+            is ChatUiState.Idle -> {
+                if (questionText.isNotBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Press the Check icon on the input bar or click a chip to query Gemma 4.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+            is ChatUiState.Loading -> {
+                LoadingDiagnosticView(thinkingLog = gemmaThinking)
+            }
+            is ChatUiState.Success -> {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    GemmaThinkingCard(
+                        thinking = gemmaThinking,
+                        latency = latency,
+                        quantization = quantizationMode
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(Color(0xFFE8F5E9), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2E7D32),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Gemma 4 Pathology Diagnosis",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Verified offline-quantized extension answer",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = uiState.answer,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 22.sp
+                            )
+                        }
+                    }
+                }
+            }
+            is ChatUiState.Error -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Inference Error",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = uiState.message,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun MicIcon(modifier: Modifier = Modifier, tint: Color = Color.Unspecified) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        // Rounded rectangle for mic body
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(w * 0.35f, h * 0.15f),
+            size = Size(w * 0.3f, h * 0.42f),
+            cornerRadius = CornerRadius(w * 0.15f, w * 0.15f)
+        )
+        // Stand base loop
+        drawArc(
+            color = tint,
+            startAngle = 0f,
+            sweepAngle = 180f,
+            useCenter = false,
+            topLeft = Offset(w * 0.22f, h * 0.28f),
+            size = Size(w * 0.56f, h * 0.45f),
+            style = Stroke(width = w * 0.08f, cap = StrokeCap.Round)
+        )
+        // Vertical connector
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.5f, h * 0.73f),
+            end = Offset(w * 0.5f, h * 0.88f),
+            strokeWidth = w * 0.08f,
+            cap = StrokeCap.Round
+        )
+        // Flat horizontal base
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.3f, h * 0.88f),
+            end = Offset(w * 0.7f, h * 0.88f),
+            strokeWidth = w * 0.08f,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+fun TrendingUpIcon(modifier: Modifier = Modifier, tint: Color = Color.Unspecified) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.15f, h * 0.8f)
+            lineTo(w * 0.42f, h * 0.53f)
+            lineTo(w * 0.62f, h * 0.63f)
+            lineTo(w * 0.85f, h * 0.25f)
+        }
+        drawPath(
+            path = path,
+            color = tint,
+            style = Stroke(width = w * 0.09f, cap = StrokeCap.Round)
+        )
+        val arrowHead = Path().apply {
+            moveTo(w * 0.6f, h * 0.25f)
+            lineTo(w * 0.85f, h * 0.25f)
+            lineTo(w * 0.85f, h * 0.5f)
+        }
+        drawPath(
+            path = arrowHead,
+            color = tint,
+            style = Stroke(width = w * 0.09f, cap = StrokeCap.Round)
+        )
+    }
+}
+
+@Composable
+fun CameraIcon(modifier: Modifier = Modifier, tint: Color = Color.Unspecified) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(w * 0.1f, h * 0.3f),
+            size = Size(w * 0.8f, h * 0.52f),
+            cornerRadius = CornerRadius(w * 0.08f, w * 0.08f)
+        )
+        drawRoundRect(
+            color = tint,
+            topLeft = Offset(w * 0.32f, h * 0.18f),
+            size = Size(w * 0.36f, h * 0.12f),
+            cornerRadius = CornerRadius(w * 0.04f, w * 0.04f)
+        )
+        drawCircle(
+            color = Color.White,
+            radius = w * 0.14f,
+            center = Offset(w * 0.5f, h * 0.56f),
+            style = Stroke(width = w * 0.07f)
         )
     }
 }
