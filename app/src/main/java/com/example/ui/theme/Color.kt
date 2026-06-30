@@ -2,15 +2,21 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Theme Colors (Vibrant Green & Warm Yellow-Orange Accent)
-val AgriGreenPrimary = Color(0xFF16A34A)      // Vibrant Grass Green
-val AgriGreenSecondary = Color(0xFFE1F2D1)    // Soft Lime/Mint Background for Cards
-val AgriGreenTertiary = Color(0xFFFFF4E0)     // Soft Creamy Orange Background for Cards
-val AgriBackground = Color(0xFFF7F9F2)        // Soft Off-white Background
+val ForestGreen = Color(0xFF2E7D32)
+val SageGreen = Color(0xFF81C784)
+val LeafAccent = Color(0xFF4CAF50)
+val EarthAmber = Color(0xFF8D6E63)
+val SoftCream = Color(0xFFF4F6F4)
+val DarkGrey = Color(0xFF1B1F1B)
 
-// Dark Theme Colors (Adapted for cozy night-reading with a vibrant touch)
-val AgriGreenPrimaryDark = Color(0xFF4ADE80)  // Pastel Bright Green
-val AgriGreenSecondaryDark = Color(0xFF2E3F1F)// Soft dark olive green
-val AgriGreenTertiaryDark = Color(0xFF3F2E1F) // Soft dark orange-brown
-val AgriBackgroundDark = Color(0xFF121411)    // Cozy dark gray-green
+val GreenPrimaryLight = Color(0xFF1B6C30)
+val GreenSecondaryLight = Color(0xFF4F6352)
+val GreenTertiaryLight = Color(0xFF3B6470)
+val GreenBackgroundLight = Color(0xFFF7FBF4)
+val GreenSurfaceLight = Color(0xFFF7FBF4)
 
+val GreenPrimaryDark = Color(0xFF85DA99)
+val GreenSecondaryDark = Color(0xFFB6CCB8)
+val GreenTertiaryDark = Color(0xFFA2CEDC)
+val GreenBackgroundDark = Color(0xFF0F1511)
+val GreenSurfaceDark = Color(0xFF0F1511)

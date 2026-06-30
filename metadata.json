@@ -1,6 +1,6 @@
 {
-  "name": "KrishiDrishti",
-  "description": "Smart Multilingual Indian Farmer Assistant for Crop Health Diagnosis and Mandi Price Analysis.",
+  "name": "Crop Disease Scanner",
+  "description": "Scan crop leaves using the camera to identify diseases and receive dynamic treatment suggestions using Gemini.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
