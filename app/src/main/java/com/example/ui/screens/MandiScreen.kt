@@ -774,10 +774,20 @@ fun MandiItemCard(
 
 @Composable
 fun TrendBadge(trend: String) {
-    val (color, text, icon) = when (trend) {
-        "UP" -> Triple(Color(0xFF2E7D32), "UP", Icons.Default.TrendingUp)
-        "DOWN" -> Triple(Color(0xFFC62828), "DOWN", Icons.Default.TrendingDown)
-        else -> Triple(Color(0xFF555555), "STABLE", Icons.Default.TrendingFlat)
+    val color = when (trend) {
+        "UP" -> Color(0xFF2E7D32)
+        "DOWN" -> Color(0xFFC62828)
+        else -> Color(0xFF555555)
+    }
+    val text = when (trend) {
+        "UP" -> "UP"
+        "DOWN" -> "DOWN"
+        else -> "STABLE"
+    }
+    val icon = when (trend) {
+        "UP" -> Icons.Default.TrendingUp
+        "DOWN" -> Icons.Default.TrendingDown
+        else -> Icons.Default.TrendingFlat
     }
 
     Row(

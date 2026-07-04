@@ -96,6 +96,23 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun saveBitmapAndInsertScan(bitmap: Bitmap?, scanType: String, cropName: String, detectedIssue: String, advice: String, language: String) {
+        viewModelScope.launch {
+            val localImagePath = bitmap?.let { saveImageToInternalStorage(it) }
+            val scanItem = ScanItem(
+                scanType = scanType,
+                cropName = cropName,
+                detectedIssue = detectedIssue,
+                advice = advice,
+                language = language,
+                imagePath = localImagePath
+            )
+            withContext(Dispatchers.IO) {
+                repository.insertScan(scanItem)
+            }
+        }
+    }
+
     fun clearHistory() {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete all saved image files

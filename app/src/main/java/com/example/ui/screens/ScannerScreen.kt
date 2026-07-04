@@ -64,6 +64,7 @@ import com.example.ui.viewmodel.ScannerUiState
 import com.example.ui.viewmodel.MarketUiState
 import com.example.ui.viewmodel.ChatUiState
 import com.example.ui.viewmodel.ScannerViewModel
+import com.example.ui.KrishiViewModel
 import androidx.compose.ui.graphics.graphicsLayer
 import java.io.InputStream
 import java.util.concurrent.Executor
@@ -72,16 +73,18 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScannerScreen(
-    viewModel: ScannerViewModel,
+    scannerViewModel: ScannerViewModel,
+    krishiViewModel: KrishiViewModel,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val uiState by viewModel.uiState.collectAsState()
-    val marketUiState by viewModel.marketUiState.collectAsState()
-    val chatUiState by viewModel.chatUiState.collectAsState()
-    val selectedImage by viewModel.selectedImage.collectAsState()
+    val uiState by scannerViewModel.uiState.collectAsState()
+    val marketUiState by scannerViewModel.marketUiState.collectAsState()
+    val chatUiState by scannerViewModel.chatUiState.collectAsState()
+    val selectedImage by scannerViewModel.selectedImage.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) }
+    var showEngineMonitorSheet by remember { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -106,7 +109,7 @@ fun ScannerScreen(
         uri?.let {
             val bitmap = context.loadUriAsBitmap(it)
             if (bitmap != null) {
-                viewModel.selectImage(bitmap)
+                scannerViewModel.selectImage(bitmap)
                 showCameraView = false
                 activeTab = 0 // Switch to scan tab to review
             }
@@ -128,10 +131,11 @@ fun ScannerScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             when (activeTab) {
-                                0 -> CameraIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                1 -> MicIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                2 -> TrendingUpIcon(modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                else -> Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                0 -> Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                1 -> Icon(Icons.Default.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                2 -> Icon(Icons.Default.Storefront, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                3 -> Icon(Icons.Default.ShowChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                else -> Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
                         Column {
@@ -139,11 +143,12 @@ fun ScannerScreen(
                                 text = when (activeTab) {
                                     0 -> "Crop Pathology Scanner"
                                     1 -> "AI Voice Q&A Advisor"
-                                    2 -> "Market Price Advisor"
-                                    else -> "Gemma 4 Config"
+                                    2 -> "Live APMC Mandi Rates"
+                                    3 -> "AI Market Forecast"
+                                    else -> "Saved Farm History"
                                 },
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
+                                fontSize = 16.sp
                             )
                             Text(
                                 text = "Gemma 4 • Low-Latency 4-bit Engine",
@@ -157,7 +162,7 @@ fun ScannerScreen(
                     if (activeTab == 0 && !showCameraView && selectedImage != null) {
                         IconButton(
                             onClick = {
-                                viewModel.clearImage()
+                                scannerViewModel.clearImage()
                                 showCameraView = true
                             }
                         ) {
@@ -166,6 +171,15 @@ fun ScannerScreen(
                                 contentDescription = "Back to Scanner"
                             )
                         }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showEngineMonitorSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Gemma Engine Monitor",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -181,26 +195,32 @@ fun ScannerScreen(
                 NavigationBarItem(
                     selected = activeTab == 0,
                     onClick = { activeTab = 0 },
-                    icon = { CameraIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("AI Scan", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = "AI Scan", tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("AI Scan", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 1,
                     onClick = { activeTab = 1 },
-                    icon = { MicIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("AI Voice Q&A", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                    icon = { Icon(Icons.Default.Mic, contentDescription = "AI Q&A", tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("AI Voice", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 2,
                     onClick = { activeTab = 2 },
-                    icon = { TrendingUpIcon(modifier = Modifier.size(24.dp), tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Market predict", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Mandi Prices", tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Mandi Rates", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 3,
                     onClick = { activeTab = 3 },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Engine Control", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Gemma Engine", fontWeight = FontWeight.Bold, fontSize = 11.sp) }
+                    icon = { Icon(Icons.Default.ShowChart, contentDescription = "AI Forecast", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("AI Forecast", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                )
+                NavigationBarItem(
+                    selected = activeTab == 4,
+                    onClick = { activeTab = 4 },
+                    icon = { Icon(Icons.Default.History, contentDescription = "Saved History", tint = if (activeTab == 4) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("History", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
             }
         },
@@ -225,7 +245,7 @@ fun ScannerScreen(
                         showCameraView -> {
                             CameraView(
                                 onImageCaptured = { bitmap ->
-                                    viewModel.selectImage(bitmap)
+                                    scannerViewModel.selectImage(bitmap)
                                     showCameraView = false
                                 },
                                 onOpenGallery = {
@@ -235,13 +255,29 @@ fun ScannerScreen(
                         }
                         else -> {
                             ImageAnalysisView(
-                                viewModel = viewModel,
+                                viewModel = scannerViewModel,
                                 image = selectedImage,
                                 uiState = uiState,
-                                onAnalyzeClick = { viewModel.analyzeImage() },
+                                onAnalyzeClick = { scannerViewModel.analyzeImage() },
                                 onResetClick = {
-                                    viewModel.clearImage()
+                                    scannerViewModel.clearImage()
                                     showCameraView = true
+                                },
+                                onSaveToHistory = { bitmap, diagnosis ->
+                                    krishiViewModel.saveBitmapAndInsertScan(
+                                        bitmap = bitmap,
+                                        scanType = "CROP",
+                                        cropName = diagnosis.crop_name,
+                                        detectedIssue = "${diagnosis.health_status}: ${diagnosis.disease_name}",
+                                        advice = "Symptoms: ${diagnosis.symptoms.joinToString(", ")}\n" +
+                                                "Causes: ${diagnosis.causes.joinToString(", ")}\n" +
+                                                "Confidence: ${diagnosis.confidence * 100}%\n\n" +
+                                                "Immediate Actions:\n${diagnosis.treatments.immediate_actions.joinToString("\n")}\n\n" +
+                                                "Organic Control:\n${diagnosis.treatments.organic_control.joinToString("\n")}\n\n" +
+                                                "Chemical Control:\n${diagnosis.treatments.chemical_control.joinToString("\n")}\n\n" +
+                                                "Preventive Measures:\n${diagnosis.treatments.preventive_measures.joinToString("\n")}",
+                                        language = "en"
+                                    )
                                 }
                             )
                         }
@@ -250,21 +286,59 @@ fun ScannerScreen(
                 1 -> {
                     // TAB 1: SPEECH PATHOLOGY / CROP HEALTH Q&A
                     SpeechQAView(
-                        viewModel = viewModel,
-                        uiState = chatUiState
+                        viewModel = scannerViewModel,
+                        uiState = chatUiState,
+                        onSaveToHistory = { question, answer ->
+                            krishiViewModel.saveBitmapAndInsertScan(
+                                bitmap = null,
+                                scanType = "RECEIPT",
+                                cropName = "AI Extension Advisor Q&A",
+                                detectedIssue = question,
+                                advice = answer,
+                                language = "en"
+                            )
+                        }
                     )
                 }
                 2 -> {
-                    // TAB 2: MARKET PRICE FORECAST HUB
-                    MarketHubView(
-                        viewModel = viewModel,
-                        uiState = marketUiState
+                    // TAB 2: LIVE APMC MANDI RATES
+                    MandiScreen(
+                        viewModel = krishiViewModel,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 3 -> {
-                    // TAB 3: GEMMA ENGINE HARDWARE MONITOR
-                    GemmaEngineConfigView(viewModel = viewModel)
+                    // TAB 3: MARKET PRICE FORECAST HUB
+                    MarketHubView(
+                        viewModel = scannerViewModel,
+                        uiState = marketUiState
+                    )
                 }
+                4 -> {
+                    // TAB 4: OFFLINE FARM HISTORY
+                    HistoryScreen(
+                        viewModel = krishiViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+    }
+
+    if (showEngineMonitorSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showEngineMonitorSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(16.dp)
+            ) {
+                GemmaEngineConfigView(viewModel = scannerViewModel)
             }
         }
     }
@@ -589,12 +663,19 @@ fun ImageAnalysisView(
     image: Bitmap?,
     uiState: ScannerUiState,
     onAnalyzeClick: () -> Unit,
-    onResetClick: () -> Unit
+    onResetClick: () -> Unit,
+    onSaveToHistory: (Bitmap?, CropDiagnosis) -> Unit
 ) {
     val scrollState = rememberScrollState()
     val gemmaThinking by viewModel.gemmaThinkingScanner.collectAsState()
     val latency by viewModel.telemetryLatency.collectAsState()
     val quantizationMode by viewModel.quantizationMode.collectAsState()
+
+    LaunchedEffect(uiState) {
+        if (uiState is ScannerUiState.Success) {
+            onSaveToHistory(image, uiState.diagnosis)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -2019,7 +2100,8 @@ fun TerminalInfoRow(label: String, value: String) {
 @Composable
 fun SpeechQAView(
     viewModel: ScannerViewModel,
-    uiState: ChatUiState
+    uiState: ChatUiState,
+    onSaveToHistory: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     var questionText by remember { mutableStateOf("") }
@@ -2027,6 +2109,12 @@ fun SpeechQAView(
     val latency by viewModel.telemetryLatency.collectAsState()
     val quantizationMode by viewModel.quantizationMode.collectAsState()
     val scrollState = rememberScrollState()
+
+    LaunchedEffect(uiState) {
+        if (uiState is ChatUiState.Success) {
+            onSaveToHistory(questionText, uiState.answer)
+        }
+    }
 
     var isListening by remember { mutableStateOf(false) }
 
