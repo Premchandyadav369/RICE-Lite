@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -266,84 +268,17 @@ fun HomeDashboardView(
             )
         }
 
-        // --- 4. Crop Health & Soil Moisture Vitals ---
+        // --- 4. Smart Irrigation & Soil Moisture Control Card ---
         Text(
-            text = "📊 Real-Time Farm Intelligence",
+            text = "💧 Smart Irrigation & Soil Moisture",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             color = Color(0xFF111827)
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Card 1: Crop Health Score
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Crop Health", fontSize = 12.sp, color = Color(0xFF6B7280))
-                        Icon(Icons.Default.Eco, contentDescription = null, tint = Color(0xFF22C55E), modifier = Modifier.size(18.dp))
-                    }
-                    Text("92 / 100", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF14532D))
-                    LinearProgressIndicator(
-                        progress = 0.92f,
-                        color = Color(0xFF22C55E),
-                        trackColor = Color(0xFFDCFCE7),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(CircleShape)
-                    )
-                    Text("Top 5% in Punjab district", fontSize = 10.sp, color = Color(0xFF15803D))
-                }
-            }
-
-            // Card 2: Soil Moisture
-            Card(
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Soil Moisture", fontSize = 12.sp, color = Color(0xFF6B7280))
-                        Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(18.dp))
-                    }
-                    Text("34% Vol", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
-                    LinearProgressIndicator(
-                        progress = 0.34f,
-                        color = Color(0xFF0EA5E9),
-                        trackColor = Color(0xFFE0F2FE),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(CircleShape)
-                    )
-                    Text("Optimal range for Rice", fontSize = 10.sp, color = Color(0xFF0284C7))
-                }
-            }
-        }
+        HomeIrrigationSchedulerCard(
+            onOpenFullScheduler = { onNavigateToTab(1) }
+        )
 
         // --- 5. Market Commodity Price Ticker ---
         Card(
@@ -488,6 +423,176 @@ fun MarketPriceItem(
                 fontWeight = FontWeight.Bold,
                 color = if (isUp) Color(0xFF10B981) else Color(0xFFEF4444)
             )
+        }
+    }
+}
+
+@Composable
+fun HomeIrrigationSchedulerCard(
+    onOpenFullScheduler: () -> Unit
+) {
+    val context = LocalContext.current
+    var isPumpActive by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header Row with Soil Moisture gauge & Full Scheduler Link
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF0EA5E9).copy(alpha = 0.12f),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Color(0xFF0EA5E9), modifier = Modifier.size(20.dp))
+                        }
+                    }
+                    Column {
+                        Text("Current Soil Moisture", fontSize = 11.sp, color = Color(0xFF6B7280))
+                        Text("28% Vol (Deficit)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                    }
+                }
+
+                TextButton(onClick = onOpenFullScheduler) {
+                    Text("Full Planner →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0284C7))
+                }
+            }
+
+            // Moisture Progress Indicator
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = 0.28f,
+                    color = Color(0xFF0284C7),
+                    trackColor = Color(0xFFE0F2FE),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Wilting (15%)", fontSize = 9.sp, color = Color(0xFFEF4444))
+                    Text("Target: 35% FC", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0284C7))
+                    Text("Saturation (100%)", fontSize = 9.sp, color = Color(0xFF6B7280))
+                }
+            }
+
+            Divider(color = Color(0xFFF3F4F6))
+
+            // Next Scheduled Event Box
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFFF0F9FF),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBAE6FD))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFF0284C7), modifier = Modifier.size(16.dp))
+                            Text("NEXT SCHEDULED EVENT", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0369A1))
+                        }
+                        Text("Paddy (Rice) • Field A Drip", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                        Text("Today at 05:30 AM • 25,000 Liters (6.2 mm)", fontSize = 11.sp, color = Color(0xFF4B5563))
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFD97706).copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "Due Soon",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD97706),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            // Quick-Run Button & Live Pump Status
+            if (isPumpActive) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color(0xFFDCFCE7),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22C55E))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Waves, contentDescription = null, tint = Color(0xFF15803D), modifier = Modifier.size(20.dp))
+                            Column {
+                                Text("Pump Active • 15-Min Quick Run", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF14532D))
+                                Text("Watering Paddy Field A (Flow: 160 L/min)", fontSize = 10.sp, color = Color(0xFF15803D))
+                            }
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                isPumpActive = false
+                                Toast.makeText(context, "Quick-Run Pump Stopped manually.", Toast.LENGTH_SHORT).show()
+                            },
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626))
+                        ) {
+                            Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Stop", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            } else {
+                Button(
+                    onClick = {
+                        isPumpActive = true
+                        Toast.makeText(context, "⚡ Quick-Run Started: Watering Paddy Field A for 15 mins!", Toast.LENGTH_LONG).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0284C7))
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("⚡ Quick-Run Pump (15 Mins)", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
         }
     }
 }
