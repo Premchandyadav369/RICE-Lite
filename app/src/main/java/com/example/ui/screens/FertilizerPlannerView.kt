@@ -3,14 +3,11 @@ package com.example.ui.screens
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -20,32 +17,35 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.FertilizerPlanEntity
 import com.example.ui.KrishiViewModel
+import com.example.ui.viewmodel.FertilizerViewModel
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FertilizerPlannerView(
-    viewModel: KrishiViewModel,
+    viewModel: KrishiViewModel? = null,
+    fertilizerViewModel: FertilizerViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val savedPlans by viewModel.savedFertilizerPlans.collectAsState()
+
+    val selectedCrop by fertilizerViewModel.selectedCrop.collectAsState()
+    val selectedSoil by fertilizerViewModel.selectedSoil.collectAsState()
+    val farmArea by fertilizerViewModel.farmAreaAcres.collectAsState()
+    val schedule by fertilizerViewModel.calculatedSchedule.collectAsState()
+    val savedPlans by fertilizerViewModel.savedPlans.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) } // 0: Calculate New Plan, 1: Saved Plans (Room DB)
-
-    // Form Inputs
-    var selectedCrop by remember { mutableStateOf("Paddy (Rice)") }
-    var selectedSoil by remember { mutableStateOf("Loamy / Alluvial Soil") }
-    var acresInput by remember { mutableStateOf("2.5") }
+    var acresInputText by remember { mutableStateOf(farmArea.toString()) }
 
     val crops = listOf(
         "Paddy (Rice)", "Wheat", "Cotton", "Sugarcane",
@@ -59,59 +59,6 @@ fun FertilizerPlannerView(
         "Black Cotton Soil",
         "Red Sandy Soil"
     )
-
-    // Parsed Acres
-    val acres = acresInput.toDoubleOrNull() ?: 1.0
-
-    // Scientific ICAR NPK Recommendation Logic (kg/acre) adjusted by Soil Type
-    val baseNpk = when (selectedCrop) {
-        "Paddy (Rice)" -> Triple(48.0, 24.0, 24.0)
-        "Wheat" -> Triple(50.0, 25.0, 20.0)
-        "Cotton" -> Triple(60.0, 30.0, 30.0)
-        "Sugarcane" -> Triple(100.0, 40.0, 50.0)
-        "Maize" -> Triple(55.0, 28.0, 25.0)
-        "Potato" -> Triple(75.0, 40.0, 60.0)
-        "Tomato" -> Triple(65.0, 35.0, 40.0)
-        "Chilli" -> Triple(70.0, 35.0, 35.0)
-        "Soybean" -> Triple(12.0, 32.0, 16.0)
-        else -> Triple(40.0, 20.0, 20.0)
-    }
-
-    // Soil Adjustment Multipliers
-    val soilMultiplier = when (selectedSoil) {
-        "Sandy / Light Soil" -> Triple(1.15, 1.0, 1.1) // Higher leaching requires extra N & K
-        "Heavy Clay Soil" -> Triple(0.95, 1.05, 0.95)
-        "Black Cotton Soil" -> Triple(1.0, 0.9, 0.8) // High natural K retention
-        "Red Sandy Soil" -> Triple(1.1, 1.15, 1.05)
-        else -> Triple(1.0, 1.0, 1.0)
-    }
-
-    val perAcreN = (baseNpk.first * soilMultiplier.first).roundTo(1)
-    val perAcreP = (baseNpk.second * soilMultiplier.second).roundTo(1)
-    val perAcreK = (baseNpk.third * soilMultiplier.third).roundTo(1)
-
-    val totalN = (perAcreN * acres).roundTo(1)
-    val totalP = (perAcreP * acres).roundTo(1)
-    val totalK = (perAcreK * acres).roundTo(1)
-
-    // Calculate Commercial Fertilizer Bags Required (50kg bags)
-    // DAP (18% N, 46% P) -> Provides all P and some N
-    val dapBags = ((totalP / 0.46) / 50.0).roundTo(1)
-    val nFromDap = totalP * (18.0 / 46.0)
-    val remainingN = (totalN - nFromDap).coerceAtLeast(0.0)
-
-    // Urea (46% N)
-    val ureaBags = ((remainingN / 0.46) / 50.0).roundTo(1)
-
-    // MOP (60% K)
-    val mopBags = ((totalK / 0.60) / 50.0).roundTo(1)
-
-    // Stage-wise Schedules
-    val basalDoseStr = "At Sowing/Transplanting: DAP ${ (dapBags * 50).roundToInt() } kg (${dapBags} bags) + MOP ${ (mopBags * 25).roundToInt() } kg + Urea ${ (ureaBags * 15).roundToInt() } kg as basal dose."
-    val firstTopDressingStr = "At 20-25 Days (Tillering/Vegetative): Urea ${ (ureaBags * 20).roundToInt() } kg/acre + Zinc Sulphate 21% @ 10 kg/acre."
-    val secondTopDressingStr = "At 45-50 Days (Panicle Initiation/Flowering): Remaining Urea ${ (ureaBags * 15).roundToInt() } kg/acre + MOP ${ (mopBags * 25).roundToInt() } kg."
-    val micronutrientStr = "Apply Sulphur WDG 90% @ 3 kg/acre + Boron 20% @ 1 kg/acre during active tillering stage."
-    val organicStr = "Mix 2 kg Azospirillum + 2 kg PSB (Phosphate Solubilizing Bacteria) in 100 kg well-decomposed FYM/Vermicompost per acre before basal application."
 
     Column(
         modifier = modifier
@@ -177,7 +124,7 @@ fun FertilizerPlannerView(
                             items(crops) { crop ->
                                 FilterChip(
                                     selected = selectedCrop == crop,
-                                    onClick = { selectedCrop = crop },
+                                    onClick = { fertilizerViewModel.setSelectedCrop(crop) },
                                     label = { Text(crop, fontSize = 12.sp) },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = Color(0xFF14532D),
@@ -193,7 +140,7 @@ fun FertilizerPlannerView(
                             items(soilTypes) { soil ->
                                 FilterChip(
                                     selected = selectedSoil == soil,
-                                    onClick = { selectedSoil = soil },
+                                    onClick = { fertilizerViewModel.setSelectedSoil(soil) },
                                     label = { Text(soil, fontSize = 12.sp) },
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = Color(0xFF0EA5E9),
@@ -203,7 +150,7 @@ fun FertilizerPlannerView(
                             }
                         }
 
-                        // Farm Area Acres
+                        // Farm Area Acres Input
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -214,8 +161,11 @@ fun FertilizerPlannerView(
                                 Text("Calculates total bag quantities", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
                             OutlinedTextField(
-                                value = acresInput,
-                                onValueChange = { acresInput = it },
+                                value = acresInputText,
+                                onValueChange = { input ->
+                                    acresInputText = input
+                                    input.toDoubleOrNull()?.let { fertilizerViewModel.setFarmArea(it) }
+                                },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.width(100.dp),
                                 shape = RoundedCornerShape(10.dp),
@@ -225,7 +175,7 @@ fun FertilizerPlannerView(
                     }
                 }
 
-                // NPK Requirements Card
+                // NPK Requirements Card (sourcing Room DB ratios)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -243,23 +193,25 @@ fun FertilizerPlannerView(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Icon(Icons.Default.Science, contentDescription = null, tint = Color(0xFF059669))
-                                Text("Recommended N-P-K Doses", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF065F46))
+                                Text("Room DB N-P-K Doses", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF065F46))
                             }
                             Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFD1FAE5)) {
-                                Text("$acres Acres Total", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857), modifier = Modifier.padding(6.dp))
+                                Text("${schedule.acres} Acres Total", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF047857), modifier = Modifier.padding(6.dp))
                             }
                         }
+
+                        Text(schedule.remarks, fontSize = 11.sp, color = Color(0xFF047857), fontWeight = FontWeight.Medium)
 
                         // NPK Triple Badges
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            NpkMetricCard(label = "Nitrogen (N)", value = "$totalN kg", sub = "$perAcreN kg/acre", color = Color(0xFF2563EB), modifier = Modifier.weight(1f))
+                            NpkMetricCard(label = "Nitrogen (N)", value = "${schedule.totalN} kg", sub = "${schedule.perAcreN} kg/acre", color = Color(0xFF2563EB), modifier = Modifier.weight(1f))
                             Spacer(modifier = Modifier.width(8.dp))
-                            NpkMetricCard(label = "Phosphorus (P)", value = "$totalP kg", sub = "$perAcreP kg/acre", color = Color(0xFFD97706), modifier = Modifier.weight(1f))
+                            NpkMetricCard(label = "Phosphorus (P)", value = "${schedule.totalP} kg", sub = "${schedule.perAcreP} kg/acre", color = Color(0xFFD97706), modifier = Modifier.weight(1f))
                             Spacer(modifier = Modifier.width(8.dp))
-                            NpkMetricCard(label = "Potassium (K)", value = "$totalK kg", sub = "$perAcreK kg/acre", color = Color(0xFF7C3AED), modifier = Modifier.weight(1f))
+                            NpkMetricCard(label = "Potassium (K)", value = "${schedule.totalK} kg", sub = "${schedule.perAcreK} kg/acre", color = Color(0xFF7C3AED), modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -281,9 +233,9 @@ fun FertilizerPlannerView(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            FertilizerBagItem(name = "Urea (46% N)", bags = "$ureaBags Bags", kg = "${(ureaBags * 50).roundToInt()} kg", color = Color(0xFF16A34A))
-                            FertilizerBagItem(name = "DAP (18-46-0)", bags = "$dapBags Bags", kg = "${(dapBags * 50).roundToInt()} kg", color = Color(0xFFD97706))
-                            FertilizerBagItem(name = "MOP (60% K)", bags = "$mopBags Bags", kg = "${(mopBags * 50).roundToInt()} kg", color = Color(0xFF2563EB))
+                            FertilizerBagItem(name = "Urea (46% N)", bags = "${schedule.ureaBags} Bags", kg = "${(schedule.ureaBags * 50).roundToInt()} kg", color = Color(0xFF16A34A))
+                            FertilizerBagItem(name = "DAP (18-46-0)", bags = "${schedule.dapBags} Bags", kg = "${(schedule.dapBags * 50).roundToInt()} kg", color = Color(0xFFD97706))
+                            FertilizerBagItem(name = "MOP (60% K)", bags = "${schedule.mopBags} Bags", kg = "${(schedule.mopBags * 50).roundToInt()} kg", color = Color(0xFF2563EB))
                         }
                     }
                 }
@@ -301,35 +253,19 @@ fun FertilizerPlannerView(
                     ) {
                         Text("📅 Custom Application Schedule", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF111827))
 
-                        ScheduleStageItem(stage = "1. Basal Application", text = basalDoseStr, icon = Icons.Default.Agriculture)
-                        ScheduleStageItem(stage = "2. 1st Top Dressing (Tillering)", text = firstTopDressingStr, icon = Icons.Default.ElectricBolt)
-                        ScheduleStageItem(stage = "3. 2nd Top Dressing (Panicle / Bloom)", text = secondTopDressingStr, icon = Icons.Default.LocalFlorist)
-                        ScheduleStageItem(stage = "4. Micronutrients & Boosters", text = micronutrientStr, icon = Icons.Default.Biotech)
-                        ScheduleStageItem(stage = "5. Organic & Bio-Fertilizer Mix", text = organicStr, icon = Icons.Default.Eco)
+                        ScheduleStageItem(stage = "1. Basal Application", text = schedule.basalDose, icon = Icons.Default.Agriculture)
+                        ScheduleStageItem(stage = "2. 1st Top Dressing (Tillering)", text = schedule.firstTopDressing, icon = Icons.Default.ElectricBolt)
+                        ScheduleStageItem(stage = "3. 2nd Top Dressing (Panicle / Bloom)", text = schedule.secondTopDressing, icon = Icons.Default.LocalFlorist)
+                        ScheduleStageItem(stage = "4. Micronutrients & Boosters", text = schedule.micronutrients, icon = Icons.Default.Biotech)
+                        ScheduleStageItem(stage = "5. Organic & Bio-Fertilizer Mix", text = schedule.organicBiofertilizer, icon = Icons.Default.Eco)
                     }
                 }
 
                 // Save Schedule to Room DB Button
                 Button(
                     onClick = {
-                        val planEntity = FertilizerPlanEntity(
-                            cropName = selectedCrop,
-                            soilType = selectedSoil,
-                            farmAreaAcres = acres,
-                            nitrogenN = perAcreN,
-                            phosphorusP = perAcreP,
-                            potassiumK = perAcreK,
-                            basalDose = basalDoseStr,
-                            firstTopDressing = firstTopDressingStr,
-                            secondTopDressing = secondTopDressingStr,
-                            micronutrients = micronutrientStr,
-                            organicBiofertilizer = organicStr,
-                            totalUreaBags = ureaBags,
-                            totalDapBags = dapBags,
-                            totalMopBags = mopBags
-                        )
-                        viewModel.saveFertilizerPlan(planEntity)
-                        Toast.makeText(context, "Saved $selectedCrop Fertilizer Plan to Room Database! ✓", Toast.LENGTH_SHORT).show()
+                        fertilizerViewModel.saveCurrentPlan()
+                        Toast.makeText(context, "Saved ${schedule.cropName} Fertilizer Plan to Room Database! ✓", Toast.LENGTH_SHORT).show()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -366,7 +302,7 @@ fun FertilizerPlannerView(
                     items(savedPlans, key = { it.id }) { plan ->
                         SavedPlanCard(
                             plan = plan,
-                            onDelete = { viewModel.deleteFertilizerPlan(plan.id) }
+                            onDelete = { fertilizerViewModel.deletePlan(plan.id) }
                         )
                     }
                 }
@@ -490,10 +426,4 @@ fun SavedPlanCard(
             }
         }
     }
-}
-
-private fun Double.roundTo(decimals: Int): Double {
-    var multiplier = 1.0
-    repeat(decimals) { multiplier *= 10 }
-    return (this * multiplier).roundToInt() / multiplier
 }
