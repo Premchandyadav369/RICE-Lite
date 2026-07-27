@@ -8,6 +8,9 @@ interface FertilizerPlanDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlan(plan: FertilizerPlanEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlans(plans: List<FertilizerPlanEntity>)
+
     @Query("SELECT * FROM fertilizer_plans ORDER BY createdAt DESC")
     fun getAllPlans(): Flow<List<FertilizerPlanEntity>>
 
