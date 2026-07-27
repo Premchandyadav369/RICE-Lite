@@ -14,6 +14,8 @@ import com.example.api.InlineData
 import com.example.api.Part
 import com.example.api.RetrofitClient
 import com.example.data.AppDatabase
+import com.example.data.CropDiseaseEntity
+import com.example.data.CropDiseaseRepository
 import com.example.data.ScanItem
 import com.example.data.ScanRepository
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,29 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
 
     private val database = AppDatabase.getDatabase(application)
     private val repository = ScanRepository(database.scanItemDao())
+    val diseaseRepository = CropDiseaseRepository(database.cropDiseaseDao())
+
+    // Offline Disease Search Query State
+    private val _diseaseSearchQuery = MutableStateFlow("")
+    val diseaseSearchQuery: StateFlow<String> = _diseaseSearchQuery.asStateFlow()
+
+    // Offline Cached Diseases Flow
+    val offlineDiseases: StateFlow<List<CropDiseaseEntity>> = diseaseRepository.allDiseases
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            diseaseRepository.ensureInitialCache()
+        }
+    }
+
+    fun updateDiseaseSearchQuery(query: String) {
+        _diseaseSearchQuery.value = query
+    }
 
     // Language state
     private val _selectedLanguage = MutableStateFlow("English")

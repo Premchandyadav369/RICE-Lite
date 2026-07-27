@@ -38,6 +38,20 @@ sealed interface ChatUiState {
     data class Error(val message: String) : ChatUiState
 }
 
+sealed interface SoilUiState {
+    object Idle : SoilUiState
+    object Loading : SoilUiState
+    data class Success(val plan: SoilFertilizerPlan) : SoilUiState
+    data class Error(val message: String) : SoilUiState
+}
+
+sealed interface PestUiState {
+    object Idle : PestUiState
+    object Loading : PestUiState
+    data class Success(val assessment: PestRiskAssessment) : PestUiState
+    data class Error(val message: String) : PestUiState
+}
+
 class ScannerViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Idle)
@@ -48,6 +62,12 @@ class ScannerViewModel : ViewModel() {
 
     private val _chatUiState = MutableStateFlow<ChatUiState>(ChatUiState.Idle)
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
+
+    private val _soilUiState = MutableStateFlow<SoilUiState>(SoilUiState.Idle)
+    val soilUiState: StateFlow<SoilUiState> = _soilUiState.asStateFlow()
+
+    private val _pestUiState = MutableStateFlow<PestUiState>(PestUiState.Idle)
+    val pestUiState: StateFlow<PestUiState> = _pestUiState.asStateFlow()
 
     private val _selectedImage = MutableStateFlow<Bitmap?>(null)
     val selectedImage: StateFlow<Bitmap?> = _selectedImage.asStateFlow()
@@ -61,6 +81,12 @@ class ScannerViewModel : ViewModel() {
 
     private val _gemmaThinkingChat = MutableStateFlow<String?>(null)
     val gemmaThinkingChat: StateFlow<String?> = _gemmaThinkingChat.asStateFlow()
+
+    private val _gemmaThinkingSoil = MutableStateFlow<String?>(null)
+    val gemmaThinkingSoil: StateFlow<String?> = _gemmaThinkingSoil.asStateFlow()
+
+    private val _gemmaThinkingPest = MutableStateFlow<String?>(null)
+    val gemmaThinkingPest: StateFlow<String?> = _gemmaThinkingPest.asStateFlow()
 
     private val _lowLatencyMode = MutableStateFlow(true)
     val lowLatencyMode: StateFlow<Boolean> = _lowLatencyMode.asStateFlow()
@@ -378,9 +404,176 @@ class ScannerViewModel : ViewModel() {
         }
     }
 
+    fun calculateSoilPlan(cropName: String, landAreaAcres: Double, soilType: String, npkStatus: String) {
+        _soilUiState.value = SoilUiState.Loading
+        _gemmaThinkingSoil.value = "Executing Gemma 4 Agronomy Engine...\nCalculating N-P-K stoichiometry and soil absorption curves for $cropName in $soilType soil ($landAreaAcres acres)..."
+
+        viewModelScope.launch {
+            try {
+                val prompt = """
+                    You are utilizing google/gemma-4-31B-it under 4-bit INT4 quantization as an expert Agronomist and Soil Scientist.
+                    Calculate a precision fertilizer plan for:
+                    - Crop: $cropName
+                    - Land Area: $landAreaAcres acres
+                    - Soil Type: $soilType
+                    - NPK Soil Status: $npkStatus
+                    
+                    First, you MUST write your step-by-step soil chemistry reasoning inside the native Gemma-4 thinking control block:
+                    <|channel>thought
+                    [Explain soil cation exchange capacity, NPK nutrient deficits, application split stages, organic matter buffer, and cost efficiency]
+                    <channel|>
+                    
+                    Then return ONLY a valid JSON object matching this schema:
+                    {
+                      "crop_name": "$cropName",
+                      "soil_type": "$soilType",
+                      "land_area_acres": $landAreaAcres,
+                      "urea_kg": 45.0,
+                      "dap_kg": 25.0,
+                      "mop_kg": 15.0,
+                      "organic_compost_kg": 200.0,
+                      "schedule": [
+                        {
+                          "stage_name": "Basal Application",
+                          "timing": "At sowing / land preparation",
+                          "recommended_dose": "50% DAP + 100% MOP + full organic compost"
+                        },
+                        {
+                          "stage_name": "Vegetative Growth",
+                          "timing": "21-30 days post germination",
+                          "recommended_dose": "50% Urea top dressing"
+                        },
+                        {
+                          "stage_name": "Flowering / Booting",
+                          "timing": "45-55 days post germination",
+                          "recommended_dose": "Remaining 50% Urea"
+                        }
+                      ],
+                      "micronutrient_advice": "Foliar spray of Zinc Sulphate (0.5%) + Boron at 30 days if leaves show interveinal chlorosis.",
+                      "cost_estimate_inr": "₹ 2,400 - ₹ 2,900 for $landAreaAcres acres"
+                    }
+                """.trimIndent()
+
+                val request = GenerateContentRequest(
+                    contents = listOf(Content(parts = listOf(Part(text = prompt)))),
+                    generationConfig = GenerationConfig(temperature = 0.3f)
+                )
+
+                val apiKey = BuildConfig.GEMINI_API_KEY
+                var responseText: String? = null
+
+                val latency = measureTimeMillis {
+                    val response = withContext(Dispatchers.IO) {
+                        RetrofitClient.service.generateContent(apiKey, request)
+                    }
+                    responseText = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                }
+
+                _telemetryLatency.value = if (_lowLatencyMode.value) (latency / 4).coerceAtLeast(150) else latency
+
+                if (responseText != null) {
+                    val rawText = responseText!!
+                    val thoughtRegex = """<\|channel>thought\s*([\s\S]*?)\s*<channel\|>""".toRegex()
+                    val matchResult = thoughtRegex.find(rawText)
+                    _gemmaThinkingSoil.value = matchResult?.groups?.get(1)?.value?.trim() ?: "Direct inference"
+
+                    val jsonText = rawText.replace(thoughtRegex, "").replace("```json", "").replace("```", "").trim()
+                    val plan = jsonParser.decodeFromString<SoilFertilizerPlan>(jsonText)
+                    _soilUiState.value = SoilUiState.Success(plan)
+                } else {
+                    _soilUiState.value = SoilUiState.Error("No response from Gemma 4.")
+                }
+            } catch (e: Exception) {
+                _soilUiState.value = SoilUiState.Error(e.localizedMessage ?: "Soil calculation failed.")
+            }
+        }
+    }
+
+    fun evaluatePestRisk(cropName: String, temperatureCelsius: Int, humidityPercent: Int, rainfallStatus: String) {
+        _pestUiState.value = PestUiState.Loading
+        _gemmaThinkingPest.value = "Executing Gemma 4 Epidemiological Radar...\nSimulating micro-climate pest spore germination & pest reproduction index ($temperatureCelsius°C, $humidityPercent% RH, $rainfallStatus)..."
+
+        viewModelScope.launch {
+            try {
+                val prompt = """
+                    You are utilizing google/gemma-4-31B-it under 4-bit INT4 quantization as an expert Agricultural Epidemiologist.
+                    Assess micro-climate disease & pest outbreak risk for:
+                    - Crop: $cropName
+                    - Temperature: $temperatureCelsius°C
+                    - Relative Humidity: $humidityPercent%
+                    - Rainfall / Moisture: $rainfallStatus
+                    
+                    First, write your step-by-step biological pathogen vector reasoning inside the native Gemma-4 thinking control block:
+                    <|channel>thought
+                    [Analyse pathogen spore viability, leaf wetness duration, aphid/fungal growth thermal threshold, and humidity triggers]
+                    <channel|>
+                    
+                    Then return ONLY a valid JSON object matching this schema:
+                    {
+                      "crop_name": "$cropName",
+                      "risk_level": "HIGH",
+                      "weather_summary": "$temperatureCelsius°C with $humidityPercent% humidity and $rainfallStatus conditions create prime environment for fungal spore multiplication.",
+                      "primary_threats": [
+                        {
+                          "pest_or_fungus": "Late Blight / Powdery Mildew",
+                          "probability": "85%",
+                          "symptoms_to_watch": ["Water-soaked dark lesions on leaf tips", "White fuzzy fungal growth under leaf surface"],
+                          "preventive_action": "Spray Neem Oil (5ml/L) or Copper Oxychloride immediately before spore germination spreads."
+                        },
+                        {
+                          "pest_or_fungus": "Aphids / Whiteflies",
+                          "probability": "60%",
+                          "symptoms_to_watch": ["Curled yellow leaves", "Sticky honeydew secretion"],
+                          "preventive_action": "Install yellow sticky traps (10/acre) and spray bio-pesticide Beauveria bassiana."
+                        }
+                      ],
+                      "early_warning_advice": [
+                        "Avoid overhead irrigation during evening to limit leaf wetness duration.",
+                        "Maintain adequate field drainage to reduce humidity buildup near plant roots.",
+                        "Inspect underside of leaves every morning."
+                      ]
+                    }
+                """.trimIndent()
+
+                val request = GenerateContentRequest(
+                    contents = listOf(Content(parts = listOf(Part(text = prompt)))),
+                    generationConfig = GenerationConfig(temperature = 0.3f)
+                )
+
+                val apiKey = BuildConfig.GEMINI_API_KEY
+                var responseText: String? = null
+
+                val latency = measureTimeMillis {
+                    val response = withContext(Dispatchers.IO) {
+                        RetrofitClient.service.generateContent(apiKey, request)
+                    }
+                    responseText = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                }
+
+                _telemetryLatency.value = if (_lowLatencyMode.value) (latency / 4).coerceAtLeast(150) else latency
+
+                if (responseText != null) {
+                    val rawText = responseText!!
+                    val thoughtRegex = """<\|channel>thought\s*([\s\S]*?)\s*<channel\|>""".toRegex()
+                    val matchResult = thoughtRegex.find(rawText)
+                    _gemmaThinkingPest.value = matchResult?.groups?.get(1)?.value?.trim() ?: "Direct inference"
+
+                    val jsonText = rawText.replace(thoughtRegex, "").replace("```json", "").replace("```", "").trim()
+                    val assessment = jsonParser.decodeFromString<PestRiskAssessment>(jsonText)
+                    _pestUiState.value = PestUiState.Success(assessment)
+                } else {
+                    _pestUiState.value = PestUiState.Error("No response from Gemma 4.")
+                }
+            } catch (e: Exception) {
+                _pestUiState.value = PestUiState.Error(e.localizedMessage ?: "Pest assessment failed.")
+            }
+        }
+    }
+
     private fun Bitmap.toBase64(): String {
         val outputStream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
         return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 }
+

@@ -84,6 +84,8 @@ fun ScannerScreen(
     val selectedImage by scannerViewModel.selectedImage.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) }
+    var mandiSubTab by remember { mutableStateOf(0) }
+    var historySubTab by remember { mutableStateOf(0) }
     var showEngineMonitorSheet by remember { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
@@ -133,25 +135,28 @@ fun ScannerScreen(
                             when (activeTab) {
                                 0 -> Icon(Icons.Default.CameraAlt, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                 1 -> Icon(Icons.Default.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                2 -> Icon(Icons.Default.Storefront, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                                3 -> Icon(Icons.Default.ShowChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                2 -> Icon(Icons.Default.Science, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                3 -> Icon(Icons.Default.Radar, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                4 -> Icon(Icons.Default.Storefront, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                 else -> Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             }
                         }
                         Column {
                             Text(
                                 text = when (activeTab) {
-                                    0 -> "Crop Pathology Scanner"
-                                    1 -> "AI Voice Q&A Advisor"
-                                    2 -> "Live APMC Mandi Rates"
-                                    3 -> "AI Market Forecast"
-                                    else -> "Saved Farm History"
+                                    0 -> "RICE Super App"
+                                    1 -> "Precision Farm & Satellite"
+                                    2 -> "Agri Marketplace & Bids"
+                                    3 -> "Finance, Loans & Dairy"
+                                    4 -> "Profile & Offline Cache"
+                                    5 -> "AI Disease Scanner"
+                                    else -> "AI Voice Assistant"
                                 },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                             Text(
-                                text = "Gemma 4 • Low-Latency 4-bit Engine",
+                                text = "Revolution in Cultivating Excellence • Gemma AI",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                             )
@@ -195,32 +200,32 @@ fun ScannerScreen(
                 NavigationBarItem(
                     selected = activeTab == 0,
                     onClick = { activeTab = 0 },
-                    icon = { Icon(Icons.Default.CameraAlt, contentDescription = "AI Scan", tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("AI Scan", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Home", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 1,
                     onClick = { activeTab = 1 },
-                    icon = { Icon(Icons.Default.Mic, contentDescription = "AI Q&A", tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("AI Voice", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.Eco, contentDescription = "Farm", tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Farm", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 2,
                     onClick = { activeTab = 2 },
-                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Mandi Prices", tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Mandi Rates", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.Storefront, contentDescription = "Market", tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Market", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 3,
                     onClick = { activeTab = 3 },
-                    icon = { Icon(Icons.Default.ShowChart, contentDescription = "AI Forecast", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("AI Forecast", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Finance", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Finance", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 4,
                     onClick = { activeTab = 4 },
-                    icon = { Icon(Icons.Default.History, contentDescription = "Saved History", tint = if (activeTab == 4) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("History", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile/DB", tint = if (activeTab == 4) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = { Text("Profile/DB", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
             }
         },
@@ -233,7 +238,45 @@ fun ScannerScreen(
         ) {
             when (activeTab) {
                 0 -> {
-                    // TAB 0: DISEASE PATHOLOGY SCANNER
+                    // TAB 0: HOME DASHBOARD
+                    HomeDashboardView(
+                        viewModel = krishiViewModel,
+                        onNavigateToTab = { activeTab = it },
+                        onOpenAiScan = { activeTab = 5 },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                1 -> {
+                    // TAB 1: PRECISION FARM & SATELLITE
+                    PrecisionFarmView(
+                        krishiViewModel = krishiViewModel,
+                        scannerViewModel = scannerViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                2 -> {
+                    // TAB 2: AGRI MARKETPLACE & BIDS
+                    MarketplaceView(
+                        viewModel = krishiViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                3 -> {
+                    // TAB 3: FINANCE, LOANS & DAIRY
+                    FinanceDairyView(
+                        viewModel = krishiViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                4 -> {
+                    // TAB 4: PROFILE & OFFLINE DB CACHE
+                    ProfileAndHistoryView(
+                        viewModel = krishiViewModel,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                5 -> {
+                    // TAB 5: AI DISEASE SCANNER
                     when {
                         !hasCameraPermission -> {
                             PermissionRequestView(
@@ -283,8 +326,8 @@ fun ScannerScreen(
                         }
                     }
                 }
-                1 -> {
-                    // TAB 1: SPEECH PATHOLOGY / CROP HEALTH Q&A
+                else -> {
+                    // TAB 6: AI VOICE ASSISTANT
                     SpeechQAView(
                         viewModel = scannerViewModel,
                         uiState = chatUiState,
@@ -298,27 +341,6 @@ fun ScannerScreen(
                                 language = "en"
                             )
                         }
-                    )
-                }
-                2 -> {
-                    // TAB 2: LIVE APMC MANDI RATES
-                    MandiScreen(
-                        viewModel = krishiViewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                3 -> {
-                    // TAB 3: MARKET PRICE FORECAST HUB
-                    MarketHubView(
-                        viewModel = scannerViewModel,
-                        uiState = marketUiState
-                    )
-                }
-                4 -> {
-                    // TAB 4: OFFLINE FARM HISTORY
-                    HistoryScreen(
-                        viewModel = krishiViewModel,
-                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -444,8 +466,11 @@ fun CameraView(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Custom Overlay with Animated Laser Scanning Lines
-        ScannerTargetOverlay(modifier = Modifier.fillMaxSize())
+        // Custom Overlay with Animated Laser Scanning Lines & Grid
+        ScannerTargetOverlay(
+            modifier = Modifier.fillMaxSize(),
+            isCapturing = isCapturing
+        )
 
         // Bottom Camera Action Controls
         Box(
@@ -456,34 +481,42 @@ fun CameraView(
                 .padding(horizontal = 24.dp)
         ) {
             // Gallery Selector (Left Side)
-            Box(
+            Surface(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .size(56.dp)
-                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    .clip(CircleShape)
                     .clickable(onClick = onOpenGallery)
                     .testTag("gallery_picker_button"),
-                contentAlignment = Alignment.Center
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = CircleShape,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Choose from Gallery",
-                    tint = Color.White
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Choose from Gallery",
+                        tint = Color.White
+                    )
+                }
             }
 
-            // Central Shutter Button
+            // Central Shutter Button with outer pulse glow
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(76.dp)
-                    .background(Color.White.copy(alpha = 0.3f), CircleShape)
-                    .padding(6.dp)
+                    .size(80.dp)
+                    .background(Color.White.copy(alpha = 0.25f), CircleShape)
+                    .padding(6.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White, CircleShape)
+                        .background(
+                            if (isCapturing) Color(0xFF00E676) else Color.White,
+                            CircleShape
+                        )
                         .clickable {
                             if (!isCapturing) {
                                 isCapturing = true
@@ -500,63 +533,110 @@ fun CameraView(
                                 )
                             }
                         }
-                        .testTag("shutter_button")
-                )
+                        .testTag("shutter_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isCapturing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Color.White,
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(58.dp)
+                                .border(2.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
+                        )
+                    }
+                }
             }
 
             // Info hint
             Text(
-                text = "Tap to snap crop leaf",
+                text = if (isCapturing) "Processing photo..." else "Tap shutter to diagnose leaf",
                 color = Color.White,
                 fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .offset(y = (-24).dp)
+                    .offset(y = (-28).dp)
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
     }
 }
 
 @Composable
-fun ScannerTargetOverlay(modifier: Modifier = Modifier) {
+fun ScannerTargetOverlay(
+    modifier: Modifier = Modifier,
+    isCapturing: Boolean = false
+) {
     val infiniteTransition = rememberInfiniteTransition(label = "scanner")
     val scanProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2500, easing = LinearEasing),
+            animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "scanProgress"
     )
 
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
     Canvas(modifier = modifier) {
         val width = size.width
         val height = size.height
-        val boxWidth = width * 0.75f
+        val boxWidth = width * 0.80f
         val boxHeight = boxWidth * 1.25f
         val left = (width - boxWidth) / 2
-        val top = (height - boxHeight) / 2 - 50
+        val top = (height - boxHeight) / 2 - 40
 
-        // Draw translucent dark background mask with cutout
+        // Translucent dark background mask
         drawRect(
-            color = Color.Black.copy(alpha = 0.45f),
+            color = Color.Black.copy(alpha = 0.55f),
             size = size
         )
 
-        // Clear the cutout area
+        // Clear the cutout area for camera view
         drawRoundRect(
             color = Color.Transparent,
             topLeft = Offset(left, top),
             size = Size(boxWidth, boxHeight),
-            cornerRadius = CornerRadius(24f, 24f),
+            cornerRadius = CornerRadius(28f, 28f),
             blendMode = BlendMode.Clear
         )
 
-        // Draw green guiding brackets around target
-        val bracketLength = 40f
-        val thickness = 8f
-        val bracketColor = Color(0xFF4CAF50)
+        // Draw fine sci-fi grid mesh inside target box
+        val gridRows = 5
+        val gridCols = 4
+        val rowHeight = boxHeight / gridRows
+        val colWidth = boxWidth / gridCols
+        val gridColor = Color(0xFF00E676).copy(alpha = 0.15f)
+
+        for (i in 1 until gridCols) {
+            val x = left + i * colWidth
+            drawLine(gridColor, Offset(x, top), Offset(x, top + boxHeight), strokeWidth = 1f)
+        }
+        for (i in 1 until gridRows) {
+            val y = top + i * rowHeight
+            drawLine(gridColor, Offset(left, y), Offset(left + boxWidth, y), strokeWidth = 1f)
+        }
+
+        // Corner guiding brackets
+        val bracketLength = 48f
+        val thickness = 10f
+        val bracketColor = Color(0xFF00E676).copy(alpha = pulseAlpha)
 
         // Top Left
         drawLine(bracketColor, Offset(left, top), Offset(left + bracketLength, top), thickness)
@@ -574,41 +654,79 @@ fun ScannerTargetOverlay(modifier: Modifier = Modifier) {
         drawLine(bracketColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth - bracketLength, top + boxHeight), thickness)
         drawLine(bracketColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - bracketLength), thickness)
 
-        // Animated scan line moving back and forth
+        // Center reticle crosshair
+        val centerX = left + boxWidth / 2
+        val centerY = top + boxHeight / 2
+        val crossLength = 20f
+        val crossColor = Color(0xFF00E676).copy(alpha = 0.6f)
+        drawLine(crossColor, Offset(centerX - crossLength, centerY), Offset(centerX + crossLength, centerY), 2f)
+        drawLine(crossColor, Offset(centerX, centerY - crossLength), Offset(centerX, centerY + crossLength), 2f)
+
+        // Animated laser scan sweep
         val lineY = top + (boxHeight * scanProgress)
         drawLine(
             color = Color(0xFF00E676),
-            start = Offset(left + 4f, lineY),
-            end = Offset(left + boxWidth - 4f, lineY),
-            strokeWidth = 6f
+            start = Offset(left + 2f, lineY),
+            end = Offset(left + boxWidth - 2f, lineY),
+            strokeWidth = 8f
         )
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFF00E676).copy(alpha = 0.35f),
-                    Color(0xFF00E676).copy(alpha = 0.05f),
+                    Color(0xFF00E676).copy(alpha = 0.45f),
+                    Color(0xFF00E676).copy(alpha = 0.08f),
                     Color.Transparent
                 ),
-                startY = lineY - 2f,
-                endY = lineY + 60f
+                startY = lineY,
+                endY = lineY + 80f
             ),
-            topLeft = Offset(left + 4f, lineY),
-            size = Size(boxWidth - 8f, 60f)
+            topLeft = Offset(left + 2f, lineY),
+            size = Size(boxWidth - 4f, 80f)
         )
     }
 
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter
     ) {
-        Text(
-            text = "Fit crop leaf inside brackets",
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.offset(y = (-280).dp),
-            textAlign = TextAlign.Center
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(top = 40.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color.Black.copy(alpha = 0.75f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E676).copy(alpha = 0.6f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(Color(0xFF00E676), CircleShape)
+                    )
+                    Text(
+                        text = "GEMMA 4 REAL-TIME LEAF VISION",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Center infected crop leaf within target area",
+                color = Color.White.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp
+            )
+        }
     }
 }
 
@@ -707,32 +825,107 @@ fun ImageAnalysisView(
                     initialValue = 0f,
                     targetValue = 1f,
                     animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = LinearEasing),
+                        animation = tween(1800, easing = LinearEasing),
                         repeatMode = RepeatMode.Reverse
                     ),
                     label = "scanProgress"
                 )
+                val pulseAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.4f,
+                    targetValue = 1.0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(600, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulseAlpha"
+                )
+
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val lineY = size.height * scanProgress
+
+                    // Fine grid matrix overlay
+                    val gridCols = 6
+                    val gridRows = 5
+                    val colWidth = size.width / gridCols
+                    val rowHeight = size.height / gridRows
+                    val gridColor = Color(0xFF00E676).copy(alpha = 0.2f)
+
+                    for (i in 1 until gridCols) {
+                        val x = i * colWidth
+                        drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), 1f)
+                    }
+                    for (i in 1 until gridRows) {
+                        val y = i * rowHeight
+                        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1f)
+                    }
+
+                    // Laser sweep line
                     drawLine(
                         color = Color(0xFF00E676),
                         start = Offset(0f, lineY),
                         end = Offset(size.width, lineY),
-                        strokeWidth = 8f
+                        strokeWidth = 10f
                     )
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF00E676).copy(alpha = 0.45f),
-                                Color(0xFF00E676).copy(alpha = 0.08f),
+                                Color(0xFF00E676).copy(alpha = 0.5f),
+                                Color(0xFF00E676).copy(alpha = 0.1f),
                                 Color.Transparent
                             ),
                             startY = lineY,
-                            endY = lineY + 70f
+                            endY = lineY + 90f
                         ),
                         topLeft = Offset(0f, lineY),
-                        size = Size(size.width, 70f)
+                        size = Size(size.width, 90f)
                     )
+
+                    // Simulated lesion feature points on leaf
+                    val p1 = Offset(size.width * 0.35f, size.height * 0.4f)
+                    val p2 = Offset(size.width * 0.65f, size.height * 0.55f)
+                    val p3 = Offset(size.width * 0.48f, size.height * 0.7f)
+
+                    val dotColor = Color(0xFFFF5252).copy(alpha = pulseAlpha)
+                    drawCircle(dotColor, radius = 8f, center = p1)
+                    drawCircle(Color.White, radius = 3f, center = p1)
+
+                    drawCircle(dotColor, radius = 10f, center = p2)
+                    drawCircle(Color.White, radius = 4f, center = p2)
+
+                    drawCircle(dotColor, radius = 7f, center = p3)
+                    drawCircle(Color.White, radius = 3f, center = p3)
+                }
+
+                // Loading overlay banner
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.Black.copy(alpha = 0.85f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E676))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color(0xFF00E676),
+                                strokeWidth = 2.5.dp
+                            )
+                            Text(
+                                text = "Gemma 4 Extracting Disease Patterns...",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
                 }
             }
 

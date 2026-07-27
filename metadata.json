@@ -1,6 +1,6 @@
 {
-  "name": "Crop Disease Scanner",
-  "description": "Scan crop leaves using the camera to identify diseases and receive dynamic treatment suggestions using Gemini.",
+  "name": "RICE AgriTech",
+  "description": "RICE (Revolution in Cultivating Excellence) - AI-powered AgriTech Super App with precision farming, disease detection, market prices, and finance.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

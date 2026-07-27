@@ -105,3 +105,45 @@ data class DailyPricePrediction(
     val price: Double,
     val percentage_change: Double
 )
+
+// --- Soil & Precision Fertilizer Calculator Structure ---
+
+@Serializable
+data class SoilFertilizerPlan(
+    val crop_name: String,
+    val soil_type: String,
+    val land_area_acres: Double,
+    val urea_kg: Double,
+    val dap_kg: Double,
+    val mop_kg: Double,
+    val organic_compost_kg: Double,
+    val schedule: List<FertilizerStage>,
+    val micronutrient_advice: String,
+    val cost_estimate_inr: String
+)
+
+@Serializable
+data class FertilizerStage(
+    val stage_name: String,
+    val timing: String,
+    val recommended_dose: String
+)
+
+// --- Pest Risk Radar Structure ---
+
+@Serializable
+data class PestRiskAssessment(
+    val crop_name: String,
+    val risk_level: String,
+    val weather_summary: String,
+    val primary_threats: List<PestThreat>,
+    val early_warning_advice: List<String>
+)
+
+@Serializable
+data class PestThreat(
+    val pest_or_fungus: String,
+    val probability: String,
+    val symptoms_to_watch: List<String>,
+    val preventive_action: String
+)

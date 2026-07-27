@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Crop Disease Scanner"
+rootProject.name = "RICE AgriTech"
 include(":app")
