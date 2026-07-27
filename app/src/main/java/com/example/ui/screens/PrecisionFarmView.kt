@@ -57,12 +57,18 @@ fun PrecisionFarmView(
                 Tab(
                     selected = subTab == 2,
                     onClick = { subTab = 2 },
-                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Irrigation Scheduler", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.WaterDrop, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 3,
                     onClick = { subTab = 3 },
+                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = subTab == 4,
+                    onClick = { subTab = 4 },
                     text = { Text("Pest Radar", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Radar, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
@@ -73,8 +79,9 @@ fun PrecisionFarmView(
             when (subTab) {
                 0 -> SatelliteNdviSubView()
                 1 -> FertilizerPlannerView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
-                2 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
-                3 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                2 -> IrrigationSchedulerView(modifier = Modifier.fillMaxSize())
+                3 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                4 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
             }
         }
     }

@@ -9,12 +9,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class], version = 4, exportSchema = false)
+@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scanItemDao(): ScanItemDao
     abstract fun cropDiseaseDao(): CropDiseaseDao
     abstract fun fertilizerPlanDao(): FertilizerPlanDao
     abstract fun npkRequirementDao(): NpkRequirementDao
+    abstract fun irrigationScheduleDao(): IrrigationScheduleDao
 
     companion object {
         @Volatile
@@ -56,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
                     try {
                         instance.fertilizerPlanDao().insertPlans(initialFertilizerPlans)
                         instance.npkRequirementDao().insertRequirements(initialNpkRequirements)
+                        instance.irrigationScheduleDao().insertSchedules(initialIrrigationSchedules)
                     } catch (_: Exception) {}
                 }
 
@@ -157,6 +159,37 @@ abstract class AppDatabase : RoomDatabase() {
             NpkRequirementEntity(cropName = "Tomato", soilType = "Red Sandy Soil", nitrogenN = 65.0, phosphorusP = 35.0, potassiumK = 40.0, remarks = "Calcium & Boron required at flowering"),
             NpkRequirementEntity(cropName = "Chilli", soilType = "Black Cotton Soil", nitrogenN = 70.0, phosphorusP = 35.0, potassiumK = 35.0, remarks = "Multiple pickings require split N application"),
             NpkRequirementEntity(cropName = "Soybean", soilType = "Black Cotton Soil", nitrogenN = 12.0, phosphorusP = 32.0, potassiumK = 16.0, remarks = "Fixes atmospheric nitrogen, low N dose needed")
+        )
+
+        private val initialIrrigationSchedules = listOf(
+            IrrigationScheduleEntity(
+                cropName = "Paddy (Rice)",
+                soilType = "Loamy / Alluvial Soil",
+                farmAreaAcres = 2.5,
+                temperatureC = 33.5,
+                humidityPct = 62.0,
+                soilMoisturePct = 28.5,
+                recommendedWaterLiters = 25000.0,
+                recommendedWaterMm = 6.2,
+                irrigationDurationMinutes = 90,
+                irrigationFrequency = "Daily Early Morning (5:30 AM)",
+                irrigationType = "Submerged / Flood Basin",
+                status = "Urgent Irrigation Needed"
+            ),
+            IrrigationScheduleEntity(
+                cropName = "Wheat",
+                soilType = "Loamy / Alluvial Soil",
+                farmAreaAcres = 3.0,
+                temperatureC = 26.0,
+                humidityPct = 48.0,
+                soilMoisturePct = 42.0,
+                recommendedWaterLiters = 18000.0,
+                recommendedWaterMm = 4.5,
+                irrigationDurationMinutes = 60,
+                irrigationFrequency = "Alternate Days at 6:00 AM",
+                irrigationType = "Sprinkler Irrigation",
+                status = "Optimal"
+            )
         )
     }
 }

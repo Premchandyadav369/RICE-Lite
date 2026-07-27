@@ -2,7 +2,12 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -17,6 +22,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -215,6 +224,20 @@ fun FertilizerPlannerView(
                         }
                     }
                 }
+
+                // Interactive NPK Nutrient Ratio Visualizer Chart
+                InteractiveNpkRatioChart(
+                    totalN = schedule.totalN,
+                    totalP = schedule.totalP,
+                    totalK = schedule.totalK,
+                    perAcreN = schedule.perAcreN,
+                    perAcreP = schedule.perAcreP,
+                    perAcreK = schedule.perAcreK,
+                    ureaBags = schedule.ureaBags,
+                    dapBags = schedule.dapBags,
+                    mopBags = schedule.mopBags,
+                    cropName = schedule.cropName
+                )
 
                 // Commercial Fertilizer Bags Requirement Card
                 Card(
@@ -426,4 +449,293 @@ fun SavedPlanCard(
             }
         }
     }
+}
+
+@Composable
+fun InteractiveNpkRatioChart(
+    totalN: Double,
+    totalP: Double,
+    totalK: Double,
+    perAcreN: Double,
+    perAcreP: Double,
+    perAcreK: Double,
+    ureaBags: Double,
+    dapBags: Double,
+    mopBags: Double,
+    cropName: String
+) {
+    var chartMode by remember { mutableStateOf(0) } // 0: NPK Ratio %, 1: Total Dosage (kg), 2: Fertilizer Bags
+    var selectedNutrientIndex by remember { mutableStateOf<Int?>(null) } // 0: N, 1: P, 2: K
+
+    // Calculate Ratio Normalization against P
+    val minVal = listOf(perAcreP, perAcreK, 1.0).filter { it > 0 }.minOrNull() ?: 1.0
+    val ratioN = (perAcreN / minVal).roundTo(1)
+    val ratioP = (perAcreP / minVal).roundTo(1)
+    val ratioK = (perAcreK / minVal).roundTo(1)
+
+    val grandTotalNpk = (totalN + totalP + totalK).coerceAtLeast(1.0)
+    val pctN = (totalN / grandTotalNpk * 100).roundTo(1)
+    val pctP = (totalP / grandTotalNpk * 100).roundTo(1)
+    val pctK = (totalK / grandTotalNpk * 100).roundTo(1)
+
+    // Animated Heights
+    val animN by animateFloatAsState(
+        targetValue = when (chartMode) {
+            0 -> (pctN / 100f).toFloat()
+            1 -> (totalN / 300.0).coerceAtMost(1.0).toFloat()
+            else -> (ureaBags / 10.0).coerceAtMost(1.0).toFloat()
+        },
+        animationSpec = tween(600),
+        label = "animN"
+    )
+
+    val animP by animateFloatAsState(
+        targetValue = when (chartMode) {
+            0 -> (pctP / 100f).toFloat()
+            1 -> (totalP / 300.0).coerceAtMost(1.0).toFloat()
+            else -> (dapBags / 10.0).coerceAtMost(1.0).toFloat()
+        },
+        animationSpec = tween(600),
+        label = "animP"
+    )
+
+    val animK by animateFloatAsState(
+        targetValue = when (chartMode) {
+            0 -> (pctK / 100f).toFloat()
+            1 -> (totalK / 300.0).coerceAtMost(1.0).toFloat()
+            else -> (mopBags / 10.0).coerceAtMost(1.0).toFloat()
+        },
+        animationSpec = tween(600),
+        label = "animK"
+    )
+
+    val nutrientInfos = listOf(
+        Triple("Nitrogen (N)", "Essential for vigorous vegetative growth, leaf development, and chlorophyll production.", Color(0xFF2563EB)),
+        Triple("Phosphorus (P)", "Promotes deep root branching, early flowering, seed formation, and energy transfer.", Color(0xFFD97706)),
+        Triple("Potassium (K)", "Enhances drought tolerance, disease resistance, stalk strength, and grain filling.", Color(0xFF7C3AED))
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(Icons.Default.BarChart, contentDescription = null, tint = Color(0xFF14532D))
+                    Text("Interactive NPK Ratio Chart", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF111827))
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFEFF6FF),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
+                ) {
+                    Text(
+                        "Ratio: $ratioN : $ratioP : $ratioK",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E40AF),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // Mode Selector Segmented Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFF3F4F6))
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                listOf("Nutrient %", "Dosage (kg)", "Bags Required").forEachIndexed { index, label ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (chartMode == index) Color.White else Color.Transparent)
+                            .clickable { chartMode = index }
+                            .padding(vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            label,
+                            fontSize = 11.sp,
+                            fontWeight = if (chartMode == index) FontWeight.Bold else FontWeight.Medium,
+                            color = if (chartMode == index) Color(0xFF14532D) else Color(0xFF6B7280)
+                        )
+                    }
+                }
+            }
+
+            // Interactive Bar Chart Canvas
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .background(Color(0xFFF9FAFB), shape = RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFE5E7EB), shape = RoundedCornerShape(12.dp))
+                    .padding(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // Bar 1: Nitrogen
+                    NpkBarColumn(
+                        label = "N (Nitrogen)",
+                        animProgress = animN,
+                        displayVal = when (chartMode) {
+                            0 -> "$pctN%"
+                            1 -> "$totalN kg"
+                            else -> "$ureaBags Bags"
+                        },
+                        subText = "$perAcreN kg/ac",
+                        color = Color(0xFF2563EB),
+                        isSelected = selectedNutrientIndex == 0,
+                        onClick = { selectedNutrientIndex = if (selectedNutrientIndex == 0) null else 0 },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Bar 2: Phosphorus
+                    NpkBarColumn(
+                        label = "P (Phosphorus)",
+                        animProgress = animP,
+                        displayVal = when (chartMode) {
+                            0 -> "$pctP%"
+                            1 -> "$totalP kg"
+                            else -> "$dapBags Bags"
+                        },
+                        subText = "$perAcreP kg/ac",
+                        color = Color(0xFFD97706),
+                        isSelected = selectedNutrientIndex == 1,
+                        onClick = { selectedNutrientIndex = if (selectedNutrientIndex == 1) null else 1 },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Bar 3: Potassium
+                    NpkBarColumn(
+                        label = "K (Potassium)",
+                        animProgress = animK,
+                        displayVal = when (chartMode) {
+                            0 -> "$pctK%"
+                            1 -> "$totalK kg"
+                            else -> "$mopBags Bags"
+                        },
+                        subText = "$perAcreK kg/ac",
+                        color = Color(0xFF7C3AED),
+                        isSelected = selectedNutrientIndex == 2,
+                        onClick = { selectedNutrientIndex = if (selectedNutrientIndex == 2) null else 2 },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Expandable Nutrient Agronomic Info Sheet
+            AnimatedVisibility(visible = selectedNutrientIndex != null) {
+                selectedNutrientIndex?.let { idx ->
+                    val info = nutrientInfos[idx]
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = info.third.copy(alpha = 0.08f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, info.third.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = info.third)
+                            Column {
+                                Text(info.first, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = info.third)
+                                Text(info.second, fontSize = 11.sp, color = Color(0xFF374151))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NpkBarColumn(
+    label: String,
+    animProgress: Float,
+    displayVal: String,
+    subText: String,
+    color: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Text(displayVal, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color)
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .weight(1f, fill = false),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val barWidth = size.width
+                val maxHeight = size.height
+                val barHeight = maxHeight * animProgress.coerceIn(0.1f, 1f)
+
+                // Background Bar Track
+                drawRoundRect(
+                    color = color.copy(alpha = 0.15f),
+                    size = Size(barWidth, maxHeight),
+                    cornerRadius = CornerRadius(12f, 12f)
+                )
+
+                // Filled Animated Active Bar
+                drawRoundRect(
+                    color = if (isSelected) color else color.copy(alpha = 0.85f),
+                    topLeft = Offset(0f, maxHeight - barHeight),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(12f, 12f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+        Text(subText, fontSize = 9.sp, color = Color(0xFF6B7280))
+    }
+}
+
+private fun Double.roundTo(decimals: Int): Double {
+    var multiplier = 1.0
+    repeat(decimals) { multiplier *= 10 }
+    return (this * multiplier).roundToInt() / multiplier
 }
