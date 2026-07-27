@@ -43,6 +43,26 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
     private val database = AppDatabase.getDatabase(application)
     private val repository = ScanRepository(database.scanItemDao())
     val diseaseRepository = CropDiseaseRepository(database.cropDiseaseDao())
+    private val fertilizerPlanDao = database.fertilizerPlanDao()
+
+    val savedFertilizerPlans: StateFlow<List<com.example.data.FertilizerPlanEntity>> = fertilizerPlanDao.getAllPlans()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun saveFertilizerPlan(plan: com.example.data.FertilizerPlanEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            fertilizerPlanDao.insertPlan(plan)
+        }
+    }
+
+    fun deleteFertilizerPlan(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            fertilizerPlanDao.deletePlan(id)
+        }
+    }
 
     // Offline Disease Search Query State
     private val _diseaseSearchQuery = MutableStateFlow("")

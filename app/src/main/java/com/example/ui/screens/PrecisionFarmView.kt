@@ -23,7 +23,7 @@ fun PrecisionFarmView(
     scannerViewModel: ScannerViewModel,
     modifier: Modifier = Modifier
 ) {
-    var subTab by remember { mutableStateOf(0) } // 0: Satellite NDVI Map, 1: Soil NPK Analysis, 2: Pest Radar Outbreaks
+    var subTab by remember { mutableStateOf(0) } // 0: Satellite NDVI Map, 1: Fertilizer Planner, 2: Soil NPK Analysis, 3: Pest Radar Outbreaks
 
     Column(
         modifier = modifier
@@ -37,9 +37,10 @@ fun PrecisionFarmView(
             shape = RoundedCornerShape(14.dp),
             color = Color.White
         ) {
-            TabRow(
+            ScrollableTabRow(
                 selectedTabIndex = subTab,
-                containerColor = Color.White
+                containerColor = Color.White,
+                edgePadding = 8.dp
             ) {
                 Tab(
                     selected = subTab == 0,
@@ -50,12 +51,18 @@ fun PrecisionFarmView(
                 Tab(
                     selected = subTab == 1,
                     onClick = { subTab = 1 },
-                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Fertilizer Planner", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Grass, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 2,
                     onClick = { subTab = 2 },
+                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = subTab == 3,
+                    onClick = { subTab = 3 },
                     text = { Text("Pest Radar", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Radar, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
@@ -65,8 +72,9 @@ fun PrecisionFarmView(
         Box(modifier = Modifier.fillMaxSize().weight(1f)) {
             when (subTab) {
                 0 -> SatelliteNdviSubView()
-                1 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
-                2 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                1 -> FertilizerPlannerView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
+                2 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                3 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
             }
         }
     }
