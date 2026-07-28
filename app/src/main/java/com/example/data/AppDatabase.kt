@@ -9,13 +9,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class], version = 5, exportSchema = false)
+@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class, FieldBoundaryEntity::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scanItemDao(): ScanItemDao
     abstract fun cropDiseaseDao(): CropDiseaseDao
     abstract fun fertilizerPlanDao(): FertilizerPlanDao
     abstract fun npkRequirementDao(): NpkRequirementDao
     abstract fun irrigationScheduleDao(): IrrigationScheduleDao
+    abstract fun fieldBoundaryDao(): FieldBoundaryDao
 
     companion object {
         @Volatile
@@ -58,6 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                         instance.fertilizerPlanDao().insertPlans(initialFertilizerPlans)
                         instance.npkRequirementDao().insertRequirements(initialNpkRequirements)
                         instance.irrigationScheduleDao().insertSchedules(initialIrrigationSchedules)
+                        instance.fieldBoundaryDao().insertBoundaries(initialFieldBoundaries)
                     } catch (_: Exception) {}
                 }
 
@@ -189,6 +191,31 @@ abstract class AppDatabase : RoomDatabase() {
                 irrigationFrequency = "Alternate Days at 6:00 AM",
                 irrigationType = "Sprinkler Irrigation",
                 status = "Optimal"
+            )
+        )
+
+        private val initialFieldBoundaries = listOf(
+            FieldBoundaryEntity(
+                fieldName = "Green Valley Rice Plot",
+                cropName = "Paddy (Rice)",
+                soilType = "Loamy / Alluvial Soil",
+                areaAcres = 2.5,
+                perimeterMeters = 420.0,
+                centerLatitude = 28.6139,
+                centerLongitude = 77.2090,
+                waypointsCount = 4,
+                coordinatesJson = "[{\"lat\":28.6139,\"lng\":77.2090},{\"lat\":28.6148,\"lng\":77.2092},{\"lat\":28.6146,\"lng\":77.2104},{\"lat\":28.6137,\"lng\":77.2101}]"
+            ),
+            FieldBoundaryEntity(
+                fieldName = "North Wheat Plot B",
+                cropName = "Wheat",
+                soilType = "Loamy / Alluvial Soil",
+                areaAcres = 3.0,
+                perimeterMeters = 480.0,
+                centerLatitude = 28.6162,
+                centerLongitude = 77.2115,
+                waypointsCount = 5,
+                coordinatesJson = "[{\"lat\":28.6160,\"lng\":77.2110},{\"lat\":28.6168,\"lng\":77.2112},{\"lat\":28.6169,\"lng\":77.2124},{\"lat\":28.6162,\"lng\":77.2122},{\"lat\":28.6158,\"lng\":77.2118}]"
             )
         )
     }

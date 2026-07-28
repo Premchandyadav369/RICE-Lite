@@ -45,30 +45,36 @@ fun PrecisionFarmView(
                 Tab(
                     selected = subTab == 0,
                     onClick = { subTab = 0 },
-                    text = { Text("Satellite NDVI", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.SatelliteAlt, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Field Map", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 1,
                     onClick = { subTab = 1 },
-                    text = { Text("Fertilizer Planner", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Grass, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Satellite NDVI", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.SatelliteAlt, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 2,
                     onClick = { subTab = 2 },
-                    text = { Text("Irrigation Scheduler", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.WaterDrop, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Fertilizer Planner", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Grass, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 3,
                     onClick = { subTab = 3 },
-                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Irrigation Scheduler", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.WaterDrop, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 4,
                     onClick = { subTab = 4 },
+                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = subTab == 5,
+                    onClick = { subTab = 5 },
                     text = { Text("Pest Radar", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Radar, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
@@ -77,11 +83,12 @@ fun PrecisionFarmView(
 
         Box(modifier = Modifier.fillMaxSize().weight(1f)) {
             when (subTab) {
-                0 -> SatelliteNdviSubView()
-                1 -> FertilizerPlannerView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
-                2 -> IrrigationSchedulerView(modifier = Modifier.fillMaxSize())
-                3 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
-                4 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                0 -> FieldBoundaryMapView(modifier = Modifier.fillMaxSize())
+                1 -> SatelliteNdviSubView()
+                2 -> FertilizerPlannerView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
+                3 -> IrrigationSchedulerView(modifier = Modifier.fillMaxSize())
+                4 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                5 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
             }
         }
     }
