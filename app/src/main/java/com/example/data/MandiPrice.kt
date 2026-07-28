@@ -13,9 +13,12 @@ data class MandiPrice(
     val trend: String // "UP", "DOWN", "STABLE"
 ) {
     fun getLocalizedCropName(lang: String): String {
-        return when (lang) {
-            "Hindi (हिन्दी)" -> cropNameHi
-            "Telugu (తెలుగు)" -> cropNameTe
+        return when {
+            lang.contains("Hindi", ignoreCase = true) || lang.contains("हिन्दी") || lang.equals("HI", ignoreCase = true) -> cropNameHi
+            lang.contains("Telugu", ignoreCase = true) || lang.contains("తెలుగు") || lang.equals("TE", ignoreCase = true) -> cropNameTe
+            lang.contains("Punjabi", ignoreCase = true) || lang.contains("ਪੰਜਾਬੀ") -> cropName
+            lang.contains("Marathi", ignoreCase = true) || lang.contains("मराठी") -> cropNameHi
+            lang.contains("Gujarati", ignoreCase = true) || lang.contains("ગુજરાતી") -> cropNameHi
             else -> cropName
         }
     }
@@ -23,18 +26,17 @@ data class MandiPrice(
 
 object MandiPriceProvider {
     val samplePrices = listOf(
-        MandiPrice("Onion", "प्याज", "ఉల్లిపాయ", "Lasalgaon APMC", "Maharashtra", 1800, 2400, 2150, "30 Jun 2026", "UP"),
-        MandiPrice("Potato", "आलू", "బంగాళాదుంప", "Agra Mandi", "Uttar Pradesh", 1200, 1600, 1450, "30 Jun 2026", "UP"),
-        MandiPrice("Wheat", "गेहूं", "గోధుమ", "Khanna APMC", "Punjab", 2125, 2300, 2250, "29 Jun 2026", "STABLE"),
-        MandiPrice("Paddy (Rice)", "धान (चावल)", "వరి ధాన్యం", "Nalgonda Mandi", "Telangana", 2100, 2450, 2300, "30 Jun 2026", "UP"),
-        MandiPrice("Cotton", "कपास", "పత్తి", "Adoni APMC", "Andhra Pradesh", 6800, 7800, 7350, "30 Jun 2026", "DOWN"),
-        MandiPrice("Tomato", "टमाटर", "టమోటా", "Kolar Market", "Karnataka", 1500, 3200, 2400, "30 Jun 2026", "UP"),
-        MandiPrice("Green Gram (Moong)", "मूंग", "పెసలు", "Indore Mandi", "Madhya Pradesh", 7200, 8500, 8100, "29 Jun 2026", "STABLE"),
-        MandiPrice("Onion", "प्याज", "ఉల్లిపాయ", "Kurnool APMC", "Andhra Pradesh", 1600, 2200, 1950, "30 Jun 2026", "STABLE"),
-        MandiPrice("Potato", "आलू", "బంగాళాదుంప", "Pune APMC", "Maharashtra", 1300, 1800, 1600, "30 Jun 2026", "UP"),
-        MandiPrice("Wheat", "गेहूं", "గోధుమ", "Gondal APMC", "Gujarat", 2200, 2600, 2450, "30 Jun 2026", "UP"),
-        MandiPrice("Cotton", "कपास", "పత్తి", "Warangal Mandi", "Telangana", 7000, 8100, 7600, "30 Jun 2026", "UP"),
-        MandiPrice("Tomato", "टमाटर", "టమోటా", "Pimpalgaon", "Maharashtra", 1000, 2200, 1600, "30 Jun 2026", "DOWN"),
-        MandiPrice("Paddy (Rice)", "धान (चावल)", "వరి ధాన్యం", "Gondia APMC", "Maharashtra", 2150, 2500, 2350, "29 Jun 2026", "STABLE")
+        MandiPrice("Chilli (Red Mirchi)", "लाल मिर्च", "ఎర్ర మిరపకాయలు (గుంటూరు)", "Guntur Mirchi Yard", "Andhra Pradesh", 18500, 22800, 21200, "28 Jul 2026", "UP"),
+        MandiPrice("Cotton", "कपास", "పత్తి (వరంగల్)", "Warangal APMC", "Telangana", 7200, 8450, 7900, "28 Jul 2026", "UP"),
+        MandiPrice("Paddy (Nellore Sona)", "धान (चावल)", "వరి ధాన్యం (నెల్లూరు సోనా)", "Miryalaguda Mandi", "Telangana", 2250, 2680, 2450, "28 Jul 2026", "STABLE"),
+        MandiPrice("Turmeric", "हल्दी", "పసుపు (నిజామాబాద్)", "Nizamabad APMC", "Telangana", 12500, 16800, 14900, "28 Jul 2026", "UP"),
+        MandiPrice("Groundnut", "मूंगफली", "వేరుశనగ (కర్నూలు)", "Adoni APMC", "Andhra Pradesh", 6400, 7500, 7100, "28 Jul 2026", "STABLE"),
+        MandiPrice("Onion", "प्याज", "ఉల్లిపాయ (కర్నూలు)", "Kurnool APMC", "Andhra Pradesh", 1800, 2500, 2150, "28 Jul 2026", "UP"),
+        MandiPrice("Maize (Corn)", "मक्का", "మొలకజొన్న (ఖమ్మం)", "Khammam Market", "Telangana", 2050, 2400, 2220, "28 Jul 2026", "UP"),
+        MandiPrice("Mango (Banganapalli)", "आम", "బంగనపల్లి మామిడి", "Vijayawada Rythu Bazar", "Andhra Pradesh", 3500, 6000, 4800, "28 Jul 2026", "STABLE"),
+        MandiPrice("Sugarcane", "गन्ना", "చెరకు (ఏలూరు)", "Eluru APMC", "Andhra Pradesh", 3100, 3500, 3350, "28 Jul 2026", "STABLE"),
+        MandiPrice("Tomato", "टमाटर", "టమోటా (మదన్‌పల్లె)", "Madanapalle Market", "Andhra Pradesh", 1800, 3800, 2900, "28 Jul 2026", "UP"),
+        MandiPrice("Wheat", "गेहूं", "గోధుమ", "Khanna APMC", "Punjab", 2125, 2300, 2250, "28 Jul 2026", "STABLE"),
+        MandiPrice("Green Gram (Moong)", "मूंग", "పెసలు (సూర్యాపేట)", "Suryapet Market", "Telangana", 7400, 8600, 8150, "28 Jul 2026", "STABLE")
     )
 }

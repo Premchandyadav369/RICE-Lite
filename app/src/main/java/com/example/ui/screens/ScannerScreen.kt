@@ -65,6 +65,7 @@ import com.example.ui.viewmodel.MarketUiState
 import com.example.ui.viewmodel.ChatUiState
 import com.example.ui.viewmodel.ScannerViewModel
 import com.example.ui.KrishiViewModel
+import com.example.ui.util.LanguageUtils
 import androidx.compose.ui.graphics.graphicsLayer
 import java.io.InputStream
 import java.util.concurrent.Executor
@@ -82,11 +83,13 @@ fun ScannerScreen(
     val marketUiState by scannerViewModel.marketUiState.collectAsState()
     val chatUiState by scannerViewModel.chatUiState.collectAsState()
     val selectedImage by scannerViewModel.selectedImage.collectAsState()
+    val selectedLanguage by krishiViewModel.selectedLanguage.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) }
     var mandiSubTab by remember { mutableStateOf(0) }
     var historySubTab by remember { mutableStateOf(0) }
     var showEngineMonitorSheet by remember { mutableStateOf(false) }
+    var showLanguageMenu by remember { mutableStateOf(false) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -143,15 +146,7 @@ fun ScannerScreen(
                         }
                         Column {
                             Text(
-                                text = when (activeTab) {
-                                    0 -> "RICE Super App"
-                                    1 -> "Precision Farm & Satellite"
-                                    2 -> "Agri Marketplace & Bids"
-                                    3 -> "Finance, Loans & Dairy"
-                                    4 -> "Profile & Offline Cache"
-                                    5 -> "AI Disease Scanner"
-                                    else -> "AI Voice Assistant"
-                                },
+                                text = LanguageUtils.getTitle(activeTab, selectedLanguage),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
@@ -179,6 +174,72 @@ fun ScannerScreen(
                     }
                 },
                 actions = {
+                    // Quick Language Selector Chip & Dropdown Menu
+                    Box {
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                            modifier = Modifier.clickable { showLanguageMenu = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                val currentOpt = LanguageUtils.getLanguageOption(selectedLanguage)
+                                Text(currentOpt.flag, fontSize = 14.sp)
+                                Text(
+                                    text = currentOpt.code,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Language Selection",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = showLanguageMenu,
+                            onDismissRequest = { showLanguageMenu = false }
+                        ) {
+                            LanguageUtils.SUPPORTED_LANGUAGES.forEach { langOpt ->
+                                val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
+                                val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
+                                        selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
+                                        selectedLanguage.equals(langOpt.code, ignoreCase = true)
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(langOpt.flag, fontSize = 16.sp)
+                                            Column {
+                                                Text(langOpt.nativeName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                Text(langOpt.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                    },
+                                    trailingIcon = {
+                                        if (isSelected) {
+                                            Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                        }
+                                    },
+                                    onClick = {
+                                        krishiViewModel.setLanguage(fullLangName)
+                                        showLanguageMenu = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(onClick = { showEngineMonitorSheet = true }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
@@ -201,31 +262,31 @@ fun ScannerScreen(
                     selected = activeTab == 0,
                     onClick = { activeTab = 0 },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home", tint = if (activeTab == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Home", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    label = { Text(LanguageUtils.getNavLabel("home", selectedLanguage), fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 1,
                     onClick = { activeTab = 1 },
                     icon = { Icon(Icons.Default.Eco, contentDescription = "Farm", tint = if (activeTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Farm", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    label = { Text(LanguageUtils.getNavLabel("farm", selectedLanguage), fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 2,
                     onClick = { activeTab = 2 },
                     icon = { Icon(Icons.Default.Storefront, contentDescription = "Market", tint = if (activeTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Market", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    label = { Text(LanguageUtils.getNavLabel("market", selectedLanguage), fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 3,
                     onClick = { activeTab = 3 },
                     icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Finance", tint = if (activeTab == 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Finance", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    label = { Text(LanguageUtils.getNavLabel("finance", selectedLanguage), fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = activeTab == 4,
                     onClick = { activeTab = 4 },
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile/DB", tint = if (activeTab == 4) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
-                    label = { Text("Profile/DB", fontWeight = FontWeight.Bold, fontSize = 10.sp) }
+                    label = { Text(LanguageUtils.getNavLabel("profile", selectedLanguage), fontWeight = FontWeight.Bold, fontSize = 10.sp) }
                 )
             }
         },

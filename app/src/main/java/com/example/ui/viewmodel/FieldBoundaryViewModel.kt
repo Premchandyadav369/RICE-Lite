@@ -36,21 +36,21 @@ class FieldBoundaryViewModel(application: Application) : AndroidViewModel(applic
 
     private val _pinnedWaypoints = MutableStateFlow<List<GpsWaypoint>>(
         listOf(
-            GpsWaypoint(28.6139, 77.2090, "P1"),
-            GpsWaypoint(28.6148, 77.2092, "P2"),
-            GpsWaypoint(28.6146, 77.2104, "P3"),
-            GpsWaypoint(28.6137, 77.2101, "P4")
+            GpsWaypoint(16.3060, 80.4358, "P1"),
+            GpsWaypoint(16.3075, 80.4362, "P2"),
+            GpsWaypoint(16.3072, 80.4375, "P3"),
+            GpsWaypoint(16.3058, 80.4370, "P4")
         )
     )
     val pinnedWaypoints: StateFlow<List<GpsWaypoint>> = _pinnedWaypoints.asStateFlow()
 
-    private val _currentFieldName = MutableStateFlow("Paddy Sector A")
+    private val _currentFieldName = MutableStateFlow("Guntur Mirchi Farm - Block A")
     val currentFieldName: StateFlow<String> = _currentFieldName.asStateFlow()
 
-    private val _currentCropName = MutableStateFlow("Paddy (Rice)")
+    private val _currentCropName = MutableStateFlow("Chilli (Red Mirchi)")
     val currentCropName: StateFlow<String> = _currentCropName.asStateFlow()
 
-    private val _currentSoilType = MutableStateFlow("Loamy / Alluvial Soil")
+    private val _currentSoilType = MutableStateFlow("Black Cotton Soil (Krishna Delta)")
     val currentSoilType: StateFlow<String> = _currentSoilType.asStateFlow()
 
     private val _mapLayer = MutableStateFlow(MapLayerType.SATELLITE_GRID)
@@ -59,9 +59,9 @@ class FieldBoundaryViewModel(application: Application) : AndroidViewModel(applic
     private val _selectedBoundaryForView = MutableStateFlow<FieldBoundaryEntity?>(null)
     val selectedBoundaryForView: StateFlow<FieldBoundaryEntity?> = _selectedBoundaryForView.asStateFlow()
 
-    // Base Reference Center GPS (Delhi NCR agricultural test plot)
-    val baseCenterLat = 28.6142
-    val baseCenterLng = 77.2097
+    // Base Reference Center GPS (AP Krishna Delta / Guntur Mirchi Belt)
+    val baseCenterLat = 16.3067
+    val baseCenterLng = 80.4365
 
     fun setFieldName(name: String) { _currentFieldName.value = name }
     fun setCropName(crop: String) { _currentCropName.value = crop }

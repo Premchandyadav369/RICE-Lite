@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import com.example.data.MandiPrice
 import com.example.data.MandiPriceProvider
 import com.example.ui.KrishiViewModel
+import com.example.ui.components.PriceTrendVisualizationCard
+import com.example.ui.components.MandiOpenStreetMapCard
 
 @Composable
 fun MandiScreen(
@@ -221,11 +223,68 @@ fun MandiScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // NATIONAL MANDI STATS INDEX ROW
+        var selectedSubTab by remember { mutableStateOf(0) } // 0: Live Rates, 1: 30D Trend Graph, 2: AP/TS Mandi Map
+
+        // Navigation Sub-Tabs Bar
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            val tabs = listOf(
+                "💰 Live Rates",
+                "📈 30D Price Trends",
+                "🗺️ AP/TS Map (OSM)"
+            )
+            tabs.forEachIndexed { index, title ->
+                val isSelected = selectedSubTab == index
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { selectedSubTab = index }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when (selectedSubTab) {
+            1 -> {
+                PriceTrendVisualizationCard(
+                    selectedLanguage = selectedLanguage,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            2 -> {
+                MandiOpenStreetMapCard(
+                    selectedLanguage = selectedLanguage,
+                    onMandiClick = { selectedMandi ->
+                        searchQuery = selectedMandi
+                        selectedSubTab = 0
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            else -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    // NATIONAL MANDI STATS INDEX ROW
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
             // Overall Index
             Card(
                 modifier = Modifier.weight(1f),
@@ -670,6 +729,9 @@ fun MandiScreen(
             }
         }
     }
+}
+}
+}
 }
 
 @Composable

@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.KrishiViewModel
+import com.example.ui.util.LanguageUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +79,7 @@ fun ProfileAndHistoryView(
 @Composable
 fun ProfileSettingsSubView(viewModel: KrishiViewModel) {
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
-    val languages = listOf("English", "हिन्दी (Hindi)", "తెలుగు (Telugu)", "தமிழ் (Tamil)")
+    val languages = LanguageUtils.SUPPORTED_LANGUAGES
 
     Column(
         modifier = Modifier
@@ -143,22 +145,74 @@ fun ProfileSettingsSubView(viewModel: KrishiViewModel) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.Language, contentDescription = null, tint = Color(0xFF14532D))
-                    Text("App Regional Language", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = Color(0xFF14532D))
+                        Text("App & AI Analysis Language", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF16A34A).copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = LanguageUtils.getLanguageOption(selectedLanguage).flag + " " + selectedLanguage,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF15803D),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
-                languages.forEach { lang ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                Text(
+                    text = "Switching language adapts app navigation titles and forces AI leaf scans & Mandi receipt analyses to respond in your preferred native script.",
+                    fontSize = 11.sp,
+                    color = Color(0xFF6B7280)
+                )
+
+                languages.forEach { langOpt ->
+                    val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
+                    val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
+                            selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
+                            selectedLanguage.equals(langOpt.code, ignoreCase = true)
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) Color(0xFFDCFCE7) else Color(0xFFF8FAFC),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) Color(0xFF16A34A) else Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setLanguage(fullLangName) }
                     ) {
-                        Text(lang, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                        RadioButton(
-                            selected = selectedLanguage.startsWith(lang.take(5)),
-                            onClick = { viewModel.setLanguage(lang) }
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(langOpt.flag, fontSize = 18.sp)
+                                Column {
+                                    Text(langOpt.nativeName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                                    Text(langOpt.name, fontSize = 11.sp, color = Color(0xFF6B7280))
+                                }
+                            }
+
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = { viewModel.setLanguage(fullLangName) },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFF16A34A))
+                            )
+                        }
                     }
                 }
             }

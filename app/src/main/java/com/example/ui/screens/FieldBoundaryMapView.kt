@@ -128,159 +128,28 @@ fun FieldBoundaryMapView(
             }
         }
 
-        // --- Interactive Map Canvas Container ---
+        // --- Interactive OpenStreetMap Leaflet Map Canvas Container ---
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(260.dp),
+                .height(290.dp),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Interactive Vector Canvas
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures { offset ->
-                                // Map canvas coordinate to simulated GPS relative offsets
-                                val canvasWidth = size.width
-                                val canvasHeight = size.height
-                                val normalizedX = (offset.x - canvasWidth / 2) / (canvasWidth / 2)
-                                val normalizedY = (offset.y - canvasHeight / 2) / (canvasHeight / 2)
-
-                                val dLat = -normalizedY * 0.0015
-                                val dLng = normalizedX * 0.0015
-                                fieldViewModel.addWaypoint(
-                                    fieldViewModel.baseCenterLat + dLat,
-                                    fieldViewModel.baseCenterLng + dLng
-                                )
-                                Toast.makeText(context, "Added Corner Pin P${waypoints.size + 1} at tap position!", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                ) {
-                    val canvasWidth = size.width
-                    val canvasHeight = size.height
-                    val center = Offset(canvasWidth / 2, canvasHeight / 2)
-
-                    // 1. Draw Map Layer Background Graphics
-                    when (mapLayer) {
-                        MapLayerType.SATELLITE_GRID -> {
-                            // Dark Agricultural Grid Lines
-                            val gridStep = 40f
-                            var x = 0f
-                            while (x < canvasWidth) {
-                                drawLine(
-                                    color = Color(0xFF334155),
-                                    start = Offset(x, 0f),
-                                    end = Offset(x, canvasHeight),
-                                    strokeWidth = 1f
-                                )
-                                x += gridStep
-                            }
-                            var y = 0f
-                            while (y < canvasHeight) {
-                                drawLine(
-                                    color = Color(0xFF334155),
-                                    start = Offset(0f, y),
-                                    end = Offset(canvasWidth, y),
-                                    strokeWidth = 1f
-                                )
-                                y += gridStep
-                            }
-                            // Draw Green Field Plot Underlay Texture
-                            drawRect(
-                                color = Color(0xFF15803D).copy(alpha = 0.15f),
-                                size = size
-                            )
-                        }
-                        MapLayerType.VECTOR_TOPOGRAPHIC -> {
-                            // Draw Topo Contour Circles
-                            for (r in 1..4) {
-                                drawCircle(
-                                    color = Color(0xFF475569),
-                                    radius = r * 120f,
-                                    center = center,
-                                    style = Stroke(
-                                        width = 1.5f,
-                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                                    )
-                                )
-                            }
-                        }
-                        MapLayerType.BOUNDARY_ONLY -> {
-                            drawRect(color = Color(0xFF0F172A), size = size)
-                        }
-                    }
-
-                    // 2. Map Waypoint Lat/Lng to Canvas Pixels
-                    val canvasPoints = waypoints.map { wp ->
-                        val dLat = wp.lat - fieldViewModel.baseCenterLat
-                        val dLng = wp.lng - fieldViewModel.baseCenterLng
-                        val px = center.x + (dLng / 0.0015 * (canvasWidth / 2)).toFloat()
-                        val py = center.y - (dLat / 0.0015 * (canvasHeight / 2)).toFloat()
-                        Offset(px.coerceIn(20f, canvasWidth - 20f), py.coerceIn(20f, canvasHeight - 20f))
-                    }
-
-                    // 3. Draw Polygon Path if at least 3 points
-                    if (canvasPoints.size >= 3) {
-                        val path = Path().apply {
-                            moveTo(canvasPoints[0].x, canvasPoints[0].y)
-                            for (i in 1 until canvasPoints.size) {
-                                lineTo(canvasPoints[i].x, canvasPoints[i].y)
-                            }
-                            close()
-                        }
-                        // Fill Polygon
-                        drawPath(
-                            path = path,
-                            color = Color(0xFF22C55E).copy(alpha = 0.35f)
-                        )
-                        // Stroke Boundary Line
-                        drawPath(
-                            path = path,
-                            color = Color(0xFF22C55E),
-                            style = Stroke(
-                                width = 4f,
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 6f))
-                            )
-                        )
-                    } else if (canvasPoints.size == 2) {
-                        drawLine(
-                            color = Color(0xFF38BDF8),
-                            start = canvasPoints[0],
-                            end = canvasPoints[1],
-                            strokeWidth = 3f
-                        )
-                    }
-
-                    // 4. Draw Waypoint Pins & Number Badges
-                    canvasPoints.forEachIndexed { index, point ->
-                        // Outer pulse ring
-                        drawCircle(
-                            color = Color(0xFF22C55E).copy(alpha = 0.3f),
-                            radius = 20f,
-                            center = point
-                        )
-                        // Solid Pin Circle
-                        drawCircle(
-                            color = Color(0xFF16A34A),
-                            radius = 12f,
-                            center = point
-                        )
-                        drawCircle(
-                            color = Color.White,
-                            radius = 12f,
-                            center = point,
-                            style = Stroke(width = 2f)
-                        )
-                    }
-
-                    // 5. Center Crosshair Overlay
-                    drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(center.x - 20f, center.y), end = Offset(center.x + 20f, center.y), strokeWidth = 1f)
-                    drawLine(color = Color.White.copy(alpha = 0.3f), start = Offset(center.x, center.y - 20f), end = Offset(center.x, center.y + 20f), strokeWidth = 1f)
-                }
+                // Real-Time OpenStreetMap Leaflet View
+                LeafletOsmMapView(
+                    waypoints = waypoints,
+                    mapLayer = mapLayer,
+                    centerLat = fieldViewModel.baseCenterLat,
+                    centerLng = fieldViewModel.baseCenterLng,
+                    onAddWaypoint = { lat, lng ->
+                        fieldViewModel.addWaypoint(lat, lng)
+                        Toast.makeText(context, "Added Corner Pin P${waypoints.size + 1} at ($lat, $lng)", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
 
                 // Overlay Controls & Live Dimensions Badge
                 Column(
@@ -297,10 +166,10 @@ fun FieldBoundaryMapView(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color.Black.copy(alpha = 0.65f)
+                            color = Color.Black.copy(alpha = 0.75f)
                         ) {
                             Text(
-                                text = "🎯 GPS Center: ${fieldViewModel.baseCenterLat}° N, ${fieldViewModel.baseCenterLng}° E",
+                                text = "🗺️ OpenStreetMap AP/TS: ${fieldViewModel.baseCenterLat}° N, ${fieldViewModel.baseCenterLng}° E",
                                 fontSize = 10.sp,
                                 color = Color.White,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -309,7 +178,7 @@ fun FieldBoundaryMapView(
 
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF0284C7)
+                            color = Color(0xFF16A34A)
                         ) {
                             Text(
                                 text = "Tap map to add pin",

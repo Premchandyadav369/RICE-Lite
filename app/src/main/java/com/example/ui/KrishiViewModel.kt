@@ -86,8 +86,8 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
         _diseaseSearchQuery.value = query
     }
 
-    // Language state
-    private val _selectedLanguage = MutableStateFlow("English")
+    // Language state - Default to Telugu for Andhra Pradesh & Telangana focus
+    private val _selectedLanguage = MutableStateFlow("Telugu (తెలుగు)")
     val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
 
     // Scan result state
@@ -96,6 +96,13 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
 
     // History state
     val scanHistory: StateFlow<List<ScanItem>> = repository.allScans
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val diseaseDiagnosisHistory: StateFlow<List<ScanItem>> = repository.cropDiseaseScans
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -217,8 +224,8 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
                 // Build System Instruction based on selected language
                 val languageStr = _selectedLanguage.value
                 val systemInstructionText = """
-                    You are "KrishiDrishti" (Smart Farmer Assistant), an expert agricultural AI advisor.
-                    Your goal is to provide deep, detailed, and highly practical agricultural advisory, crop health diagnosis, and mandi market bill analysis for Indian farmers.
+                    You are "కృషిదృష్టి (KrishiDrishti)", the official AI Agricultural Super Advisor for farmers across Andhra Pradesh & Telangana (Rayalaseema, Coastal Andhra, Telangana Black Cotton & Krishna Delta Belts).
+                    Your goal is to provide deep, detailed, and highly practical agricultural advisory, crop health diagnosis (Chilli/Mirchi, Paddy, Cotton, Turmeric, Maize, Mango), and Mandi/Rythu Bazar receipt analysis tailored to Andhra Pradesh and Telangana APMCs (Guntur, Warangal, Nizamabad, Kurnool, Khammam, Vijayawada).
                     
                     CRITICAL INSTRUCTION:
                     You MUST respond completely and fluently in the requested language: $languageStr.
