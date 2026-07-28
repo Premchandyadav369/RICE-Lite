@@ -90,6 +90,14 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedLanguage = MutableStateFlow("Telugu (తెలుగు)")
     val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
 
+    // AP & Telangana Dynamic Seasonal Theme state
+    private val _currentAgriSeason = MutableStateFlow(com.example.ui.theme.AgriSeason.detectCurrentSeason())
+    val currentAgriSeason: StateFlow<com.example.ui.theme.AgriSeason> = _currentAgriSeason.asStateFlow()
+
+    fun setAgriSeason(season: com.example.ui.theme.AgriSeason) {
+        _currentAgriSeason.value = season
+    }
+
     // Scan result state
     private val _scanUiState = MutableStateFlow<ScanUiState>(ScanUiState.Idle)
     val scanUiState: StateFlow<ScanUiState> = _scanUiState.asStateFlow()
@@ -111,6 +119,28 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setLanguage(language: String) {
         _selectedLanguage.value = language
+    }
+
+    // Accessibility View States
+    private val _isHighContrast = MutableStateFlow(false)
+    val isHighContrast: StateFlow<Boolean> = _isHighContrast.asStateFlow()
+
+    private val _isLargeText = MutableStateFlow(false)
+    val isLargeText: StateFlow<Boolean> = _isLargeText.asStateFlow()
+
+    private val _isIlliterateFarmerMode = MutableStateFlow(false)
+    val isIlliterateFarmerMode: StateFlow<Boolean> = _isIlliterateFarmerMode.asStateFlow()
+
+    fun toggleHighContrast() {
+        _isHighContrast.value = !_isHighContrast.value
+    }
+
+    fun toggleLargeText() {
+        _isLargeText.value = !_isLargeText.value
+    }
+
+    fun toggleIlliterateFarmerMode() {
+        _isIlliterateFarmerMode.value = !_isIlliterateFarmerMode.value
     }
 
     fun resetState() {

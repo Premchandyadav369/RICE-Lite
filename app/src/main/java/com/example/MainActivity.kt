@@ -14,6 +14,9 @@ import com.example.ui.screens.ScannerScreen
 import com.example.ui.theme.CropDiseaseScannerTheme
 import com.example.ui.viewmodel.ScannerViewModel
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 class MainActivity : ComponentActivity() {
     private val scannerViewModel: ScannerViewModel by viewModels()
     private val krishiViewModel: KrishiViewModel by viewModels()
@@ -22,7 +25,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            CropDiseaseScannerTheme {
+            val currentSeason by krishiViewModel.currentAgriSeason.collectAsState()
+            CropDiseaseScannerTheme(agriSeason = currentSeason) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ScannerScreen(
                         scannerViewModel = scannerViewModel,

@@ -49,6 +49,8 @@ fun FertilizerPlannerView(
 
     val selectedCrop by fertilizerViewModel.selectedCrop.collectAsState()
     val selectedSoil by fertilizerViewModel.selectedSoil.collectAsState()
+    val selectedStage by fertilizerViewModel.selectedCropStage.collectAsState()
+    val selectedRegion by fertilizerViewModel.selectedAgroRegion.collectAsState()
     val farmArea by fertilizerViewModel.farmAreaAcres.collectAsState()
     val schedule by fertilizerViewModel.calculatedSchedule.collectAsState()
     val savedPlans by fertilizerViewModel.savedPlans.collectAsState()
@@ -57,16 +59,31 @@ fun FertilizerPlannerView(
     var acresInputText by remember { mutableStateOf(farmArea.toString()) }
 
     val crops = listOf(
-        "Paddy (Rice)", "Wheat", "Cotton", "Sugarcane",
-        "Maize", "Potato", "Tomato", "Chilli", "Soybean"
+        "Paddy (Rice)", "Cotton (Patti)", "Chilli (Mirchi)", "Turmeric (Pasupu)",
+        "Groundnut (Verusanaga)", "Maize (Mokka Jonna)", "Sugarcane", "Tomato"
     )
 
     val soilTypes = listOf(
         "Loamy / Alluvial Soil",
+        "Black Cotton Soil (Regur)",
+        "Red Sandy Soil (Chalka)",
         "Heavy Clay Soil",
-        "Sandy / Light Soil",
-        "Black Cotton Soil",
-        "Red Sandy Soil"
+        "Sandy / Light Soil"
+    )
+
+    val cropStages = listOf(
+        "Basal / Sowing Stage (0-15 Days)",
+        "Vegetative / Tillering Stage (20-45 Days)",
+        "Flowering / Panicle Stage (45-75 Days)",
+        "Grain Filling / Maturity Stage (75-110+ Days)"
+    )
+
+    val agroRegions = listOf(
+        "Krishna-Godavari Delta Belt (AP)",
+        "Guntur & Prakasam Chilli Belt (AP)",
+        "Warangal & Khammam Cotton Belt (TS)",
+        "Rayalaseema Red Soil Belt (AP)",
+        "Nizamabad Turmeric Belt (TS)"
     )
 
     Column(
@@ -124,7 +141,7 @@ fun FertilizerPlannerView(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(Icons.Default.Grass, contentDescription = null, tint = Color(0xFF14532D))
-                            Text("Fertilizer Planner & NPK Calculator", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF111827))
+                            Text("AP & Telangana Fertilizer Dosage Calculator", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF111827))
                         }
 
                         // Crop Selector Chips
@@ -159,6 +176,38 @@ fun FertilizerPlannerView(
                             }
                         }
 
+                        // Crop Stage Selector Chips (CRITICAL)
+                        Text("3. Current Crop Growth Stage:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF374151))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(cropStages) { stage ->
+                                FilterChip(
+                                    selected = selectedStage == stage,
+                                    onClick = { fertilizerViewModel.setSelectedCropStage(stage) },
+                                    label = { Text(stage, fontSize = 12.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(0xFFD97706),
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+
+                        // AP / TS Agro-Climatic Belt Selector
+                        Text("4. AP / Telangana Agricultural Belt:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF374151))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(agroRegions) { region ->
+                                FilterChip(
+                                    selected = selectedRegion == region,
+                                    onClick = { fertilizerViewModel.setSelectedAgroRegion(region) },
+                                    label = { Text(region, fontSize = 12.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(0xFF7C3AED),
+                                        selectedLabelColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+
                         // Farm Area Acres Input
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -166,7 +215,7 @@ fun FertilizerPlannerView(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
-                                Text("3. Farm Area (Acres):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF374151))
+                                Text("5. Farm Area (Acres):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF374151))
                                 Text("Calculates total bag quantities", fontSize = 10.sp, color = Color(0xFF6B7280))
                             }
                             OutlinedTextField(
@@ -181,6 +230,71 @@ fun FertilizerPlannerView(
                                 singleLine = true
                             )
                         }
+                    }
+                }
+
+                // Stage-Specific Immediate Dosage Action Box
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFF59E0B))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.ElectricBolt, contentDescription = null, tint = Color(0xFFD97706))
+                            Text("🎯 Immediate Stage-Specific Dosage Recommendation", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF92400E))
+                        }
+
+                        Text(
+                            text = schedule.stageSpecificDosage,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF78350F),
+                            lineHeight = 18.sp
+                        )
+
+                        HorizontalDivider(color = Color(0xFFFCD34D))
+
+                        // Immediate Stage Bags Grid
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            FertilizerBagItem(name = "Stage Urea", bags = "${schedule.stageUreaBags} Bags", kg = "${(schedule.stageUreaBags * 50).roundToInt()} kg", color = Color(0xFF16A34A))
+                            FertilizerBagItem(name = "Stage DAP", bags = "${schedule.stageDapBags} Bags", kg = "${(schedule.stageDapBags * 50).roundToInt()} kg", color = Color(0xFFD97706))
+                            FertilizerBagItem(name = "Stage MOP", bags = "${schedule.stageMopBags} Bags", kg = "${(schedule.stageMopBags * 50).roundToInt()} kg", color = Color(0xFF2563EB))
+                        }
+                    }
+                }
+
+                // Soil Type & ANGRAU/PJTSAU Advisory Box
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDFA)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0D9488))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(Icons.Default.Terrain, contentDescription = null, tint = Color(0xFF0D9488))
+                            Text("Soil & Regional Extension Guidance", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF115E59))
+                        }
+
+                        Text(schedule.soilTypeAdjustmentReason, fontSize = 12.sp, color = Color(0xFF134E4A), lineHeight = 16.sp)
+                        Text(schedule.apTsExtensionAdvice, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFF0F766E), lineHeight = 16.sp)
                     }
                 }
 

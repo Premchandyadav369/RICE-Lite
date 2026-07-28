@@ -26,6 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.KrishiViewModel
+import com.example.ui.components.RegionalWeatherAdvisorCard
+import com.example.ui.components.SeasonalThemeCard
+import com.example.ui.components.AccessibilityViewCard
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,15 +40,30 @@ fun HomeDashboardView(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFAFAF8))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // --- Regional Weather & AP/TS Weather-Linked Crop Advisory with Voice ---
+        RegionalWeatherAdvisorCard(
+            selectedLanguage = selectedLanguage
+        )
+
+        // --- Accessibility & Farmer Voice Read Aloud Card ---
+        AccessibilityViewCard(
+            viewModel = viewModel
+        )
+
+        // --- Dynamic AP & Telangana Agricultural Seasonal Theme Card ---
+        SeasonalThemeCard(
+            viewModel = viewModel
+        )
         // --- 1. User Header & Greeting Card ---
         Card(
             modifier = Modifier.fillMaxWidth(),
