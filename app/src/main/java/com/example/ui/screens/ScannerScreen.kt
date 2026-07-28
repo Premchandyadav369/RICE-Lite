@@ -57,12 +57,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.R
 import com.example.data.model.CropDiagnosis
+import com.example.data.model.PestIdentificationResult
 import com.example.data.model.CropMarketPrediction
 import com.example.data.model.DailyPricePrediction
 import com.example.ui.theme.ForestGreen
 import com.example.ui.viewmodel.ScannerUiState
 import com.example.ui.viewmodel.MarketUiState
 import com.example.ui.viewmodel.ChatUiState
+import com.example.ui.viewmodel.CameraScanMode
+import com.example.ui.viewmodel.PestScanUiState
 import com.example.ui.viewmodel.ScannerViewModel
 import com.example.ui.KrishiViewModel
 import com.example.ui.util.LanguageUtils
@@ -83,6 +86,7 @@ fun ScannerScreen(
     val marketUiState by scannerViewModel.marketUiState.collectAsState()
     val chatUiState by scannerViewModel.chatUiState.collectAsState()
     val selectedImage by scannerViewModel.selectedImage.collectAsState()
+    val cameraScanMode by scannerViewModel.cameraScanMode.collectAsState()
     val selectedLanguage by krishiViewModel.selectedLanguage.collectAsState()
 
     var activeTab by remember { mutableStateOf(0) }
@@ -333,6 +337,7 @@ fun ScannerScreen(
                     // TAB 4: PROFILE & OFFLINE DB CACHE
                     ProfileAndHistoryView(
                         viewModel = krishiViewModel,
+                        scannerViewModel = scannerViewModel,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -348,6 +353,8 @@ fun ScannerScreen(
                         }
                         showCameraView -> {
                             CameraView(
+                                scanMode = cameraScanMode,
+                                onScanModeChange = { scannerViewModel.setCameraScanMode(it) },
                                 onImageCaptured = { bitmap ->
                                     scannerViewModel.selectImage(bitmap)
                                     showCameraView = false
@@ -380,6 +387,23 @@ fun ScannerScreen(
                                                 "Organic Control:\n${diagnosis.treatments.organic_control.joinToString("\n")}\n\n" +
                                                 "Chemical Control:\n${diagnosis.treatments.chemical_control.joinToString("\n")}\n\n" +
                                                 "Preventive Measures:\n${diagnosis.treatments.preventive_measures.joinToString("\n")}",
+                                        language = "en"
+                                    )
+                                },
+                                onSavePestToHistory = { bitmap, pestResult ->
+                                    krishiViewModel.saveBitmapAndInsertScan(
+                                        bitmap = bitmap,
+                                        scanType = "PEST",
+                                        cropName = pestResult.crop_affected.ifBlank { "Crop Pest" },
+                                        detectedIssue = "${pestResult.infestation_level} Infestation: ${pestResult.pest_name}",
+                                        advice = "Pest: ${pestResult.pest_name} (${pestResult.scientific_name})\n" +
+                                                "Infestation Level: ${pestResult.infestation_level}\n" +
+                                                "Confidence: ${pestResult.confidence * 100}%\n\n" +
+                                                "Damage Symptoms:\n${pestResult.damage_symptoms.joinToString("\n")}\n\n" +
+                                                "Organic Controls:\n${pestResult.organic_controls.joinToString("\n")}\n\n" +
+                                                "Biological Controls:\n${pestResult.biological_controls.joinToString("\n")}\n\n" +
+                                                "Chemical Control:\n${pestResult.chemical_controls.joinToString("\n")}\n\n" +
+                                                "Preventive Measures:\n${pestResult.preventive_measures.joinToString("\n")}",
                                         language = "en"
                                     )
                                 }
@@ -489,6 +513,8 @@ fun PermissionRequestView(
 
 @Composable
 fun CameraView(
+    scanMode: CameraScanMode = CameraScanMode.DISEASE,
+    onScanModeChange: (CameraScanMode) -> Unit = {},
     onImageCaptured: (Bitmap) -> Unit,
     onOpenGallery: () -> Unit
 ) {
@@ -530,8 +556,70 @@ fun CameraView(
         // Custom Overlay with Animated Laser Scanning Lines & Grid
         ScannerTargetOverlay(
             modifier = Modifier.fillMaxSize(),
-            isCapturing = isCapturing
+            isCapturing = isCapturing,
+            scanMode = scanMode
         )
+
+        // Top Mode Switcher Bar
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+                .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(24.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Surface(
+                onClick = { onScanModeChange(CameraScanMode.DISEASE) },
+                shape = RoundedCornerShape(20.dp),
+                color = if (scanMode == CameraScanMode.DISEASE) Color(0xFF00E676) else Color.Transparent
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Eco,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
+                    )
+                    Text(
+                        text = "Crop Disease",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
+                    )
+                }
+            }
+
+            Surface(
+                onClick = { onScanModeChange(CameraScanMode.PEST) },
+                shape = RoundedCornerShape(20.dp),
+                color = if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color.Transparent
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BugReport,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                    )
+                    Text(
+                        text = "Pest Identification",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                    )
+                }
+            }
+        }
 
         // Bottom Camera Action Controls
         Box(
@@ -615,7 +703,7 @@ fun CameraView(
 
             // Info hint
             Text(
-                text = if (isCapturing) "Processing photo..." else "Tap shutter to diagnose leaf",
+                text = if (isCapturing) "Processing photo..." else if (scanMode == CameraScanMode.PEST) "Tap shutter to identify pest" else "Tap shutter to diagnose leaf",
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -632,7 +720,8 @@ fun CameraView(
 @Composable
 fun ScannerTargetOverlay(
     modifier: Modifier = Modifier,
-    isCapturing: Boolean = false
+    isCapturing: Boolean = false,
+    scanMode: CameraScanMode = CameraScanMode.DISEASE
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "scanner")
     val scanProgress by infiniteTransition.animateFloat(
@@ -752,7 +841,7 @@ fun ScannerTargetOverlay(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
+            modifier = Modifier.padding(top = 70.dp)
         ) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
@@ -770,7 +859,7 @@ fun ScannerTargetOverlay(
                             .background(Color(0xFF00E676), CircleShape)
                     )
                     Text(
-                        text = "GEMMA 4 REAL-TIME LEAF VISION",
+                        text = if (scanMode == CameraScanMode.PEST) "GEMMA 4 REAL-TIME PEST VISION" else "GEMMA 4 REAL-TIME LEAF VISION",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -779,13 +868,13 @@ fun ScannerTargetOverlay(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Center infected crop leaf within target area",
+                text = if (scanMode == CameraScanMode.PEST) "Center pest infestation or bug damage in target" else "Center infected crop leaf within target area",
                 color = Color.White.copy(alpha = 0.9f),
                 fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
+                fontSize = 13.sp
             )
         }
     }
@@ -843,9 +932,12 @@ fun ImageAnalysisView(
     uiState: ScannerUiState,
     onAnalyzeClick: () -> Unit,
     onResetClick: () -> Unit,
-    onSaveToHistory: (Bitmap?, CropDiagnosis) -> Unit
+    onSaveToHistory: (Bitmap?, CropDiagnosis) -> Unit,
+    onSavePestToHistory: (Bitmap?, PestIdentificationResult) -> Unit = { _, _ -> }
 ) {
     val scrollState = rememberScrollState()
+    val scanMode by viewModel.cameraScanMode.collectAsState()
+    val pestUiState by viewModel.pestScanUiState.collectAsState()
     val gemmaThinking by viewModel.gemmaThinkingScanner.collectAsState()
     val latency by viewModel.telemetryLatency.collectAsState()
     val quantizationMode by viewModel.quantizationMode.collectAsState()
@@ -856,6 +948,12 @@ fun ImageAnalysisView(
         }
     }
 
+    LaunchedEffect(pestUiState) {
+        if (pestUiState is PestScanUiState.Success) {
+            onSavePestToHistory(image, (pestUiState as PestScanUiState.Success).result)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -863,6 +961,68 @@ fun ImageAnalysisView(
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Mode selector bar
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Surface(
+                    onClick = { viewModel.setCameraScanMode(CameraScanMode.DISEASE) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (scanMode == CameraScanMode.DISEASE) MaterialTheme.colorScheme.primary else Color.Transparent
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Eco,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (scanMode == CameraScanMode.DISEASE) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Crop Disease",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scanMode == CameraScanMode.DISEASE) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = { viewModel.setCameraScanMode(CameraScanMode.PEST) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (scanMode == CameraScanMode.PEST) Color(0xFFD97706) else Color.Transparent
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (scanMode == CameraScanMode.PEST) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Pest Identification",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scanMode == CameraScanMode.PEST) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
         // Leaf Image Preview Card with Active Scan animation if Loading
         Box(
             modifier = Modifier
@@ -874,13 +1034,16 @@ fun ImageAnalysisView(
             if (image != null) {
                 Image(
                     bitmap = image.asImageBitmap(),
-                    contentDescription = "Selected Crop Leaf",
+                    contentDescription = "Selected Photo",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
 
-            if (uiState is ScannerUiState.Loading) {
+            val isLoading = (scanMode == CameraScanMode.DISEASE && uiState is ScannerUiState.Loading) ||
+                    (scanMode == CameraScanMode.PEST && pestUiState is PestScanUiState.Loading)
+
+            if (isLoading) {
                 val infiniteTransition = rememberInfiniteTransition(label = "analysis_scanner")
                 val scanProgress by infiniteTransition.animateFloat(
                     initialValue = 0f,
@@ -904,7 +1067,6 @@ fun ImageAnalysisView(
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val lineY = size.height * scanProgress
 
-                    // Fine grid matrix overlay
                     val gridCols = 6
                     val gridRows = 5
                     val colWidth = size.width / gridCols
@@ -920,7 +1082,6 @@ fun ImageAnalysisView(
                         drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1f)
                     }
 
-                    // Laser sweep line
                     drawLine(
                         color = Color(0xFF00E676),
                         start = Offset(0f, lineY),
@@ -941,7 +1102,6 @@ fun ImageAnalysisView(
                         size = Size(size.width, 90f)
                     )
 
-                    // Simulated lesion feature points on leaf
                     val p1 = Offset(size.width * 0.35f, size.height * 0.4f)
                     val p2 = Offset(size.width * 0.65f, size.height * 0.55f)
                     val p3 = Offset(size.width * 0.48f, size.height * 0.7f)
@@ -957,7 +1117,6 @@ fun ImageAnalysisView(
                     drawCircle(Color.White, radius = 3f, center = p3)
                 }
 
-                // Loading overlay banner
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -980,7 +1139,7 @@ fun ImageAnalysisView(
                                 strokeWidth = 2.5.dp
                             )
                             Text(
-                                text = "Gemma 4 Extracting Disease Patterns...",
+                                text = if (scanMode == CameraScanMode.PEST) "Gemma 4 Identifying Pest & Organic Remedies..." else "Gemma 4 Extracting Disease Patterns...",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
@@ -990,7 +1149,6 @@ fun ImageAnalysisView(
                 }
             }
 
-            // Small reticle guide
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1000,67 +1158,130 @@ fun ImageAnalysisView(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Diagnostic Action or Status Container
-        when (uiState) {
-            is ScannerUiState.Idle -> {
-                Button(
-                    onClick = onAnalyzeClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .testTag("analyze_button"),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = null)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Diagnose Leaf Health", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        if (scanMode == CameraScanMode.DISEASE) {
+            when (uiState) {
+                is ScannerUiState.Idle -> {
+                    Button(
+                        onClick = onAnalyzeClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("analyze_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Diagnose Leaf Health", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = onResetClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("retake_button"),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Retake Photo")
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = onResetClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .testTag("retake_button"),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Retake Photo")
+                is ScannerUiState.Loading -> {
+                    LoadingDiagnosticView(thinkingLog = gemmaThinking)
                 }
-            }
 
-            is ScannerUiState.Loading -> {
-                LoadingDiagnosticView(thinkingLog = gemmaThinking)
-            }
+                is ScannerUiState.Success -> {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        GemmaThinkingCard(
+                            thinking = gemmaThinking,
+                            latency = latency,
+                            quantization = quantizationMode
+                        )
 
-            is ScannerUiState.Success -> {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Render the Collapsible Gemma-4 step-by-step thinking block
-                    GemmaThinkingCard(
-                        thinking = gemmaThinking,
-                        latency = latency,
-                        quantization = quantizationMode
-                    )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        DiagnosisResultView(
+                            diagnosis = uiState.diagnosis,
+                            onResetClick = onResetClick
+                        )
+                    }
+                }
 
-                    DiagnosisResultView(
-                        diagnosis = uiState.diagnosis,
+                is ScannerUiState.Error -> {
+                    ErrorDiagnosticView(
+                        message = uiState.message,
+                        onRetryClick = onAnalyzeClick,
                         onResetClick = onResetClick
                     )
                 }
             }
+        } else {
+            // PEST SCAN MODE
+            when (pestUiState) {
+                is PestScanUiState.Idle -> {
+                    Button(
+                        onClick = { viewModel.analyzePestImage() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .testTag("analyze_pest_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.BugReport, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Identify Pest & Organic Controls", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
 
-            is ScannerUiState.Error -> {
-                ErrorDiagnosticView(
-                    message = uiState.message,
-                    onRetryClick = onAnalyzeClick,
-                    onResetClick = onResetClick
-                )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = onResetClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("retake_pest_button"),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Retake Photo")
+                    }
+                }
+
+                is PestScanUiState.Loading -> {
+                    LoadingDiagnosticView(thinkingLog = gemmaThinking)
+                }
+
+                is PestScanUiState.Success -> {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        GemmaThinkingCard(
+                            thinking = gemmaThinking,
+                            latency = latency,
+                            quantization = quantizationMode
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        PestDiagnosisResultView(
+                            result = (pestUiState as PestScanUiState.Success).result,
+                            onResetClick = onResetClick
+                        )
+                    }
+                }
+
+                is PestScanUiState.Error -> {
+                    ErrorDiagnosticView(
+                        message = (pestUiState as PestScanUiState.Error).message,
+                        onRetryClick = { viewModel.analyzePestImage() },
+                        onResetClick = onResetClick
+                    )
+                }
             }
         }
     }
@@ -1434,6 +1655,224 @@ fun DiagnosisResultView(
             Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
             Spacer(modifier = Modifier.width(10.dp))
             Text("Scan Another Leaf", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun PestDiagnosisResultView(
+    result: PestIdentificationResult,
+    onResetClick: () -> Unit
+) {
+    val isSevere = result.infestation_level.equals("High", ignoreCase = true) || result.infestation_level.equals("Severe", ignoreCase = true)
+    val statusColor = if (isSevere) Color(0xFFD84315) else Color(0xFFD97706)
+    val statusContainerColor = if (isSevere) Color(0xFFFBE9E7) else Color(0xFFFEF3C7)
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Status Badge Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = statusContainerColor),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(statusColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BugReport,
+                        contentDescription = null,
+                        tint = statusColor,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = result.pest_name.ifBlank { "Pest Identified" },
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor
+                    )
+                    if (result.scientific_name.isNotBlank()) {
+                        Text(
+                            text = result.scientific_name,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            color = statusColor.copy(alpha = 0.8f)
+                        )
+                    }
+                    Text(
+                        text = "Infestation: ${result.infestation_level} • Confidence: ${(result.confidence * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = statusColor.copy(alpha = 0.9f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Key Details Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                DetailItemRow(label = "Crop Affected", value = result.crop_affected.ifBlank { "Multiple Crops" })
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                DetailItemRow(label = "Infestation Level", value = result.infestation_level)
+                
+                if (result.damage_symptoms.isNotEmpty()) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Text(
+                        text = "Damage Symptoms:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                    )
+                    result.damage_symptoms.forEach { symptom ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Text("• ", color = statusColor, fontWeight = FontWeight.Bold)
+                            Text(text = symptom, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Pest Control Measures Tabs
+        Text(
+            text = "Pest Control & Management Strategy",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        var selectedTab by remember { mutableStateOf(0) }
+        val tabTitles = listOf("Organic", "Biological", "Chemical", "Preventive")
+
+        ScrollableTabRow(
+            selectedTabIndex = selectedTab,
+            edgePadding = 0.dp,
+            containerColor = Color.Transparent,
+            contentColor = Color(0xFFD97706),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            tabTitles.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title, fontWeight = FontWeight.Bold) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val listToDisplay = when (selectedTab) {
+                    0 -> result.organic_controls
+                    1 -> result.biological_controls
+                    2 -> result.chemical_controls
+                    else -> result.preventive_measures
+                }
+
+                if (listToDisplay.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No controls listed in this category.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    listToDisplay.forEachIndexed { idx, action ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .size(18.dp)
+                                    .background(
+                                        Color(0xFFD97706).copy(alpha = 0.15f),
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = (idx + 1).toString(),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFD97706)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = action,
+                                style = MaterialTheme.typography.bodyMedium,
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onResetClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .testTag("scan_another_pest_button"),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Scan Another Crop/Pest", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
 
         Spacer(modifier = Modifier.height(32.dp))

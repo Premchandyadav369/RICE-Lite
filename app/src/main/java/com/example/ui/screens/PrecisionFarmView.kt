@@ -69,12 +69,24 @@ fun PrecisionFarmView(
                 Tab(
                     selected = subTab == 4,
                     onClick = { subTab = 4 },
-                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                    text = { Text("Soil Heatmap", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
                 Tab(
                     selected = subTab == 5,
                     onClick = { subTab = 5 },
+                    text = { Text("Soil NPK", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Science, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = subTab == 6,
+                    onClick = { subTab = 6 },
+                    text = { Text("Offline Manuals", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.CloudOff, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+                Tab(
+                    selected = subTab == 7,
+                    onClick = { subTab = 7 },
                     text = { Text("Pest Radar", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.Radar, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
@@ -87,8 +99,10 @@ fun PrecisionFarmView(
                 1 -> SatelliteNdviSubView()
                 2 -> FertilizerPlannerView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
                 3 -> IrrigationSchedulerView(modifier = Modifier.fillMaxSize())
-                4 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
-                5 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                4 -> SoilQualityHeatmapView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
+                5 -> SoilHealthView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
+                6 -> OfflineRepositoryView(viewModel = krishiViewModel, modifier = Modifier.fillMaxSize())
+                7 -> PestRadarView(viewModel = scannerViewModel, modifier = Modifier.fillMaxSize())
             }
         }
     }

@@ -287,6 +287,30 @@ fun HomeDashboardView(
             )
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            QuickActionButton(
+                icon = Icons.Default.CloudOff,
+                title = "Offline Guides",
+                subtitle = "PDFs & Videos",
+                containerColor = Color(0xFF8B5CF6),
+                contentColor = Color.White,
+                modifier = Modifier.weight(1f),
+                onClick = { onNavigateToTab(4) }
+            )
+            QuickActionButton(
+                icon = Icons.Default.GridOn,
+                title = "Soil Heatmap",
+                subtitle = "Nutrient Contour",
+                containerColor = Color(0xFFD97706),
+                contentColor = Color.White,
+                modifier = Modifier.weight(1f),
+                onClick = { onNavigateToTab(1) }
+            )
+        }
+
         // --- 4. Smart Irrigation & Soil Moisture Control Card ---
         Text(
             text = "💧 Smart Irrigation & Soil Moisture",

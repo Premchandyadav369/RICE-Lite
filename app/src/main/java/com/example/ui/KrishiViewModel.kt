@@ -31,6 +31,21 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
+data class UserProfileData(
+    val farmerName: String = "Farmer Rajesh Kumar",
+    val farmerNameTelugu: String = "కె. రాజేష్ కుమార్",
+    val phoneNumber: String = "+91 98765 43210",
+    val passbookKhataNumber: String = "PB-10482 / 2026",
+    val fatherOrHusbandName: String = "వెంకటేశ్వర్లు",
+    val aadhaarStatus: String = "Verified ✓ (XXXX-4321)",
+    val district: String = "Guntur (గుంటూరు)",
+    val mandalVillage: String = "Tenali (తేనాలి)",
+    val surveyNumbers: String = "142/1B, 143/2A",
+    val landAreaAcres: Double = 4.5,
+    val isOcrVerified: Boolean = false,
+    val lastOcrDocType: String = ""
+)
+
 sealed interface ScanUiState {
     object Idle : ScanUiState
     object Loading : ScanUiState
@@ -40,10 +55,37 @@ sealed interface ScanUiState {
 
 class KrishiViewModel(application: Application) : AndroidViewModel(application) {
 
+    // User Profile Data State populated via Telugu OCR or manual edit
+    private val _userProfileData = MutableStateFlow(UserProfileData())
+    val userProfileData: StateFlow<UserProfileData> = _userProfileData.asStateFlow()
+
+    fun updateProfileData(profile: UserProfileData) {
+        _userProfileData.value = profile
+    }
+
+    fun applyOcrResultToProfile(ocr: com.example.data.model.TeluguDocOcrResult) {
+        val current = _userProfileData.value
+        _userProfileData.value = current.copy(
+            farmerName = ocr.farmer_name_english.ifBlank { current.farmerName },
+            farmerNameTelugu = ocr.farmer_name_telugu.ifBlank { current.farmerNameTelugu },
+            fatherOrHusbandName = ocr.father_or_husband_name.ifBlank { current.fatherOrHusbandName },
+            passbookKhataNumber = ocr.passbook_or_khata_number.ifBlank { current.passbookKhataNumber },
+            district = ocr.district.ifBlank { current.district },
+            mandalVillage = ocr.mandal_or_village.ifBlank { current.mandalVillage },
+            surveyNumbers = if (ocr.survey_numbers.isNotEmpty()) ocr.survey_numbers.joinToString(", ") else current.surveyNumbers,
+            landAreaAcres = if (ocr.total_land_acres > 0.0) ocr.total_land_acres else current.landAreaAcres,
+            aadhaarStatus = if (ocr.aadhaar_masked.isNotBlank()) "Verified ✓ (${ocr.aadhaar_masked})" else current.aadhaarStatus,
+            isOcrVerified = true,
+            lastOcrDocType = ocr.document_type
+        )
+    }
+
     private val database = AppDatabase.getDatabase(application)
     private val repository = ScanRepository(database.scanItemDao())
     val diseaseRepository = CropDiseaseRepository(database.cropDiseaseDao())
     private val fertilizerPlanDao = database.fertilizerPlanDao()
+    private val offlineManualDao = database.offlineManualDao()
+    private val soilSampleDao = database.soilSampleDao()
 
     val savedFertilizerPlans: StateFlow<List<com.example.data.FertilizerPlanEntity>> = fertilizerPlanDao.getAllPlans()
         .stateIn(
@@ -51,6 +93,32 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val offlineManuals: StateFlow<List<com.example.data.OfflineManualEntity>> = offlineManualDao.getAllManuals()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val soilSamples: StateFlow<List<com.example.data.SoilSampleEntity>> = soilSampleDao.getAllSamples()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun toggleManualCacheStatus(id: String, currentStatus: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            offlineManualDao.updateCacheStatus(id, !currentStatus)
+        }
+    }
+
+    fun addSoilSample(sample: com.example.data.SoilSampleEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            soilSampleDao.insertSample(sample)
+        }
+    }
 
     fun saveFertilizerPlan(plan: com.example.data.FertilizerPlanEntity) {
         viewModelScope.launch(Dispatchers.IO) {

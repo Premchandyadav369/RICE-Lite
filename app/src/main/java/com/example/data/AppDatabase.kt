@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class, FieldBoundaryEntity::class], version = 6, exportSchema = false)
+@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class, FieldBoundaryEntity::class, OfflineManualEntity::class, SoilSampleEntity::class], version = 8, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scanItemDao(): ScanItemDao
     abstract fun cropDiseaseDao(): CropDiseaseDao
@@ -17,6 +17,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun npkRequirementDao(): NpkRequirementDao
     abstract fun irrigationScheduleDao(): IrrigationScheduleDao
     abstract fun fieldBoundaryDao(): FieldBoundaryDao
+    abstract fun offlineManualDao(): OfflineManualDao
+    abstract fun soilSampleDao(): SoilSampleDao
 
     companion object {
         @Volatile
@@ -35,19 +37,18 @@ abstract class AppDatabase : RoomDatabase() {
                         super.onCreate(db)
                         CoroutineScope(Dispatchers.IO).launch {
                             INSTANCE?.fertilizerPlanDao()?.insertPlans(initialFertilizerPlans)
+                            INSTANCE?.offlineManualDao()?.insertManuals(initialOfflineManuals)
+                            INSTANCE?.soilSampleDao()?.insertSamples(initialSoilSamples)
                         }
                     }
 
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
-                        // Prepopulate if database was already created but table is empty
                         CoroutineScope(Dispatchers.IO).launch {
-                            val dao = INSTANCE?.fertilizerPlanDao()
-                            if (dao != null) {
-                                // Background check to ensure default ICAR Indian crop plans exist
-                                val existingPlans = dao.getAllPlans()
-                                // Prepopulate if needed
-                            }
+                            try {
+                                INSTANCE?.offlineManualDao()?.insertManuals(initialOfflineManuals)
+                                INSTANCE?.soilSampleDao()?.insertSamples(initialSoilSamples)
+                            } catch (_: Exception) {}
                         }
                     }
                 })
@@ -60,6 +61,8 @@ abstract class AppDatabase : RoomDatabase() {
                         instance.npkRequirementDao().insertRequirements(initialNpkRequirements)
                         instance.irrigationScheduleDao().insertSchedules(initialIrrigationSchedules)
                         instance.fieldBoundaryDao().insertBoundaries(initialFieldBoundaries)
+                        instance.offlineManualDao().insertManuals(initialOfflineManuals)
+                        instance.soilSampleDao().insertSamples(initialSoilSamples)
                     } catch (_: Exception) {}
                 }
 
@@ -217,6 +220,89 @@ abstract class AppDatabase : RoomDatabase() {
                 waypointsCount = 5,
                 coordinatesJson = "[{\"lat\":28.6160,\"lng\":77.2110},{\"lat\":28.6168,\"lng\":77.2112},{\"lat\":28.6169,\"lng\":77.2124},{\"lat\":28.6162,\"lng\":77.2122},{\"lat\":28.6158,\"lng\":77.2118}]"
             )
+        )
+
+        private val initialOfflineManuals = listOf(
+            OfflineManualEntity(
+                id = "man_cotton_pink_bollworm",
+                titleEn = "Cotton Pink Bollworm Organic Management Guide",
+                titleTe = "పత్తి పంటలో గులాబీ రంగు పురుగు సమగ్ర యాజమాన్యం",
+                cropCategory = "Cotton",
+                type = "MANUAL",
+                descriptionEn = "ANGRAU IPM guidelines for pheromone trap installation and neem oil spray schedules.",
+                descriptionTe = "లింగ ఆకర్షణ బుట్టల అమరిక మరియు వేప నూనె పిచికారీ విధానాలు.",
+                fileSizeMb = 2.4,
+                isCachedOffline = true,
+                lastUpdated = "2026-07-28",
+                contentMarkdownEn = "# Pink Bollworm Prevention\n\n1. Install 8-10 Pheromone Traps per acre at 45 DAS.\n2. Spray Neem Oil 10,000 PPM @ 2ml/litre at evening hours.\n3. Release Trichogramma parasitoid wasps @ 50,000/acre.",
+                contentMarkdownTe = "# గులాబీ రంగు పురుగు నివారణ\n\n1. ఎకరాకు 8 నుండి 10 లింగ ఆకర్షణ బుట్టలు అమర్చండి.\n2. లీటరు నీటికి 2 మి.లీ వేప నూనె కలిపి సాయంత్రం వేళ పిచికారీ చేయండి.\n3. ఎకరాకు 50,000 ట్రైకోగ్రామా కార్డులు విడుదల చేయండి."
+            ),
+            OfflineManualEntity(
+                id = "vid_chilli_black_thrips",
+                titleEn = "Chilli Black Thrips Symptoms & Bio-Pesticide Spray Video",
+                titleTe = "మిర్చి నల్ల తామర పురుగు నివారణ వీడియో గైడ్",
+                cropCategory = "Chilli",
+                type = "VIDEO",
+                descriptionEn = "Detailed visual video showing leaf curling vs thrips infestation and Beauveria bassiana spray.",
+                descriptionTe = "మిర్చి ఆకుల ముడుత, నల్ల తామర పురుగు గుర్తింపు మరియు జీవ సిలీంధ్ర మందుల పిచికారీ వీడియో.",
+                fileSizeMb = 12.8,
+                isCachedOffline = true,
+                videoDurationMinutes = 6,
+                lastUpdated = "2026-07-28",
+                contentMarkdownEn = "Video Tutorial: Learn how to identify early black thrips under leaves. Mix Beauveria bassiana @ 5g/litre with sticky wetting agent.",
+                contentMarkdownTe = "వీడియో గైడ్: ఆకుల అడుగున తామర పురుగుల గుర్తింపు మరియు బ్యూవేరియా బేసియానా లీటరుకు 5 గ్రాముల చొప్పున కలిపి పిచికారీ చేయుట."
+            ),
+            OfflineManualEntity(
+                id = "inf_paddy_fertilizer_calendar",
+                titleEn = "Paddy Split NPK Fertilizer Schedule Infographic",
+                titleTe = "వరి పంట నత్రజని, భాస్వరం, పొటాష్ మోతాదు ఇన్ఫోగ్రాఫిక్",
+                cropCategory = "Paddy",
+                type = "INFOGRAPHIC",
+                descriptionEn = "Visual step-by-step chart showing exact bag quantities for Basal, Tillering, and Panicle stages.",
+                descriptionTe = "దుక్కిలో, పిలక దశలో మరియు పొట్ట దశలో యూరియా, డిఎపి, పొటాష్ సంచుల చార్ట్.",
+                fileSizeMb = 1.5,
+                isCachedOffline = true,
+                lastUpdated = "2026-07-28",
+                contentMarkdownEn = "Infographic Chart: Basal (DAP 1 Bag + MOP 0.5 Bag) -> 25 DAS (Urea 1 Bag + Zinc) -> 50 DAS (Urea 0.75 Bag + MOP 0.5 Bag).",
+                contentMarkdownTe = "ఇన్ఫోగ్రాఫిక్ చార్ట్: దుక్కిలో డిఎపి 1 సంచి + పొటాష్ అర సంచి -> 25 రోజులకు యూరియా 1 సంచి -> 50 రోజులకు యూరియా ముప్పావు సంచి."
+            ),
+            OfflineManualEntity(
+                id = "man_turmeric_rhizome_rot",
+                titleEn = "Turmeric Rhizome Rot Prevention & Soil Drenching",
+                titleTe = "పసుపు కొమ్ము కుళ్ళు తెగులు మరియు భూమి తడిపే విధానం",
+                cropCategory = "Turmeric",
+                type = "MANUAL",
+                descriptionEn = "PJTSAU agricultural advisory for Trichoderma soil treatment and raised bed ridge drainage.",
+                descriptionTe = "ట్రైకోడెర్మా విరిడే భూమి శుద్ధి మరియు బోదెల సాగు ద్వారా నీటి నిల్వ నివారణ.",
+                fileSizeMb = 3.1,
+                isCachedOffline = true,
+                lastUpdated = "2026-07-28",
+                contentMarkdownEn = "1. Avoid water stagnation in turmeric beds.\n2. Mix 2.5 kg Trichoderma in 100 kg FYM.\n3. Drench soil with Copper Oxychloride @ 3g/litre.",
+                contentMarkdownTe = "1. పసుపు మడులలో నీరు నిల్వ ఉండకుండా చూడండి.\n2. 2.5 కిలోల ట్రైకోడెర్మాను 100 కిలోల పశువుల ఎరువులో కలిపి వేయండి.\n3. లీటరు నీటికి 3 గ్రాముల కాపర్ ఆక్సిక్లోరైడ్ కలిపి మొదళ్ల వద్ద తడపండి."
+            ),
+            OfflineManualEntity(
+                id = "vid_drip_fertigation_maintenance",
+                titleEn = "Drip Irrigation Acid Flushing & Filter Cleaning Video",
+                titleTe = "బిందు సేద్యం ల్యాటరల్స్ క్లీనింగ్ మరియు యాసిడ్ ఫ్లషింగ్",
+                cropCategory = "Soil & Water",
+                type = "VIDEO",
+                descriptionEn = "Step-by-step guide on hydrochloric acid flushing to clear calcium clogging in drippers.",
+                descriptionTe = "డ్రిప్పర్ల డ్రిప్ రంధ్రాల ఉప్పు పేరుకుపోవడం నివారణకు యాసిడ్ ఫ్లషింగ్ వీడియో.",
+                fileSizeMb = 14.2,
+                isCachedOffline = true,
+                videoDurationMinutes = 8,
+                lastUpdated = "2026-07-28",
+                contentMarkdownEn = "Flushing Protocol: Use 0.2% Hydrochloric Acid (HCl). Run drip for 30 minutes, inject acid, seal system for 12 hours, then flush with clean water.",
+                contentMarkdownTe = "ఫ్లషింగ్ విధానం: 0.2% హైడ్రోక్లోరిక్ యాసిడ్ వాడండి. 12 గంటల పాటు పైపులలో ఉంచి తరువాత మంచినీటితో ఫ్లష్ చేయండి."
+            )
+        )
+
+        private val initialSoilSamples = listOf(
+            SoilSampleEntity(zoneName = "North-West Zone A1", gridXRatio = 0.2f, gridYRatio = 0.25f, pH = 6.8f, organicCarbonPct = 0.72f, nitrogenKgPerAcre = 110f, phosphorusKgPerAcre = 24f, potassiumKgPerAcre = 160f, electricalConductivity = 0.6f, moisturePct = 34f, soilType = "Regur Black Cotton Soil"),
+            SoilSampleEntity(zoneName = "North-East Zone A2", gridXRatio = 0.75f, gridYRatio = 0.2f, pH = 7.4f, organicCarbonPct = 0.45f, nitrogenKgPerAcre = 72f, phosphorusKgPerAcre = 14f, potassiumKgPerAcre = 110f, electricalConductivity = 1.2f, moisturePct = 26f, soilType = "Red Chalka Soil"),
+            SoilSampleEntity(zoneName = "Central Zone B1", gridXRatio = 0.5f, gridYRatio = 0.5f, pH = 7.0f, organicCarbonPct = 0.68f, nitrogenKgPerAcre = 98f, phosphorusKgPerAcre = 20f, potassiumKgPerAcre = 145f, electricalConductivity = 0.7f, moisturePct = 30f, soilType = "Alluvial Loam"),
+            SoilSampleEntity(zoneName = "South-West Zone C1", gridXRatio = 0.25f, gridYRatio = 0.8f, pH = 8.1f, organicCarbonPct = 0.38f, nitrogenKgPerAcre = 60f, phosphorusKgPerAcre = 10f, potassiumKgPerAcre = 90f, electricalConductivity = 1.8f, moisturePct = 22f, soilType = "Alkaline Heavy Clay"),
+            SoilSampleEntity(zoneName = "South-East Zone C2", gridXRatio = 0.8f, gridYRatio = 0.75f, pH = 6.5f, organicCarbonPct = 0.82f, nitrogenKgPerAcre = 125f, phosphorusKgPerAcre = 28f, potassiumKgPerAcre = 175f, electricalConductivity = 0.5f, moisturePct = 38f, soilType = "Fertile Silt Loam")
         )
     }
 }

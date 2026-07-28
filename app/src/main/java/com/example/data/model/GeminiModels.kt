@@ -147,3 +147,41 @@ data class PestThreat(
     val symptoms_to_watch: List<String>,
     val preventive_action: String
 )
+
+// --- Pest Identification & Organic Control Structure ---
+
+@Serializable
+data class PestIdentificationResult(
+    val pest_name: String,
+    val scientific_name: String = "",
+    val crop_affected: String = "",
+    val infestation_level: String = "Moderate", // "Low", "Moderate", "Severe", "Critical"
+    val confidence: Float = 0.90f,
+    val damage_symptoms: List<String> = emptyList(),
+    val organic_controls: List<String> = emptyList(),
+    val biological_controls: List<String> = emptyList(),
+    val chemical_controls: List<String> = emptyList(),
+    val preventive_measures: List<String> = emptyList()
+)
+
+// --- Telugu Government Document OCR Structure ---
+
+@Serializable
+data class TeluguDocOcrResult(
+    val document_type: String = "Pattadar Passbook (పట్టాదారు పాస్ పుస్తకం)",
+    val farmer_name_telugu: String = "",
+    val farmer_name_english: String = "",
+    val father_or_husband_name: String = "",
+    val passbook_or_khata_number: String = "",
+    val survey_numbers: List<String> = emptyList(),
+    val district: String = "",
+    val mandal_or_village: String = "",
+    val total_land_acres: Double = 0.0,
+    val crop_history: List<String> = emptyList(),
+    val aadhaar_masked: String = "",
+    val confidence_score: Float = 0.95f,
+    val raw_telugu_text: String = "",
+    val verification_status: String = "Verified Government Record"
+)
+
+
