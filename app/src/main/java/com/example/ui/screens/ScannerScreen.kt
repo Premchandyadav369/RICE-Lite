@@ -9,13 +9,17 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
@@ -178,73 +182,107 @@ fun ScannerScreen(
                     }
                 },
                 actions = {
-                    // Quick Language Selector Chip & Dropdown Menu
-                    Box {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-                            modifier = Modifier.clickable { showLanguageMenu = true }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    // Top Navigation Bar Language Switcher UI Component (English, Telugu, Hindi)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier
+                            .testTag("top_bar_language_switcher")
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 3.dp)
+                    ) {
+                        listOf(
+                            Triple("EN", "English", "English (English)"),
+                            Triple("TE", "తెలుగు", "Telugu (తెలుగు)"),
+                            Triple("HI", "हिन्दी", "Hindi (हिन्दी)")
+                        ).forEach { (code, label, fullName) ->
+                            val isSelected = selectedLanguage.contains(code, ignoreCase = true) ||
+                                    selectedLanguage.contains(label, ignoreCase = true) ||
+                                    (code == "EN" && selectedLanguage.contains("English", ignoreCase = true)) ||
+                                    (code == "TE" && selectedLanguage.contains("Telugu", ignoreCase = true)) ||
+                                    (code == "HI" && selectedLanguage.contains("Hindi", ignoreCase = true))
+
+                            Surface(
+                                onClick = {
+                                    LanguageUtils.updateAppLocale(context, fullName)
+                                    krishiViewModel.setLanguage(fullName)
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                modifier = Modifier.testTag("lang_toggle_$code")
                             ) {
-                                val currentOpt = LanguageUtils.getLanguageOption(selectedLanguage)
-                                Text(currentOpt.flag, fontSize = 14.sp)
                                 Text(
-                                    text = currentOpt.code,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = "Language Selection",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(18.dp)
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
                                 )
                             }
                         }
 
-                        DropdownMenu(
-                            expanded = showLanguageMenu,
-                            onDismissRequest = { showLanguageMenu = false }
-                        ) {
-                            LanguageUtils.SUPPORTED_LANGUAGES.forEach { langOpt ->
-                                val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
-                                val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
-                                        selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
-                                        selectedLanguage.equals(langOpt.code, ignoreCase = true)
-
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Text(langOpt.flag, fontSize = 16.sp)
-                                            Column {
-                                                Text(langOpt.nativeName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                Text(langOpt.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                            }
-                                        }
-                                    },
-                                    trailingIcon = {
-                                        if (isSelected) {
-                                            Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                        }
-                                    },
-                                    onClick = {
-                                        krishiViewModel.setLanguage(fullLangName)
-                                        showLanguageMenu = false
-                                    }
+                        // Dropdown Arrow for More Regional Languages
+                        Box {
+                            IconButton(
+                                onClick = { showLanguageMenu = true },
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .testTag("lang_menu_dropdown_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "More Regional Languages",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
                                 )
+                            }
+
+                            DropdownMenu(
+                                expanded = showLanguageMenu,
+                                onDismissRequest = { showLanguageMenu = false }
+                            ) {
+                                LanguageUtils.SUPPORTED_LANGUAGES.forEach { langOpt ->
+                                    val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
+                                    val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
+                                            selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
+                                            selectedLanguage.equals(langOpt.code, ignoreCase = true)
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                            ) {
+                                                Text(langOpt.flag, fontSize = 16.sp)
+                                                Column {
+                                                    Text(langOpt.nativeName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                    Text(langOpt.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            }
+                                        },
+                                        trailingIcon = {
+                                            if (isSelected) {
+                                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                            }
+                                        },
+                                        onClick = {
+                                            LanguageUtils.updateAppLocale(context, fullLangName)
+                                            krishiViewModel.setLanguage(fullLangName)
+                                            showLanguageMenu = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
 
-                    IconButton(onClick = { showEngineMonitorSheet = true }) {
+                    IconButton(
+                        onClick = { showEngineMonitorSheet = true },
+                        modifier = Modifier.testTag("engine_monitor_button")
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Gemma Engine Monitor",
@@ -522,8 +560,39 @@ fun CameraView(
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val previewView = remember { PreviewView(context) }
-    val imageCapture = remember { ImageCapture.Builder().build() }
+    
+    var flashMode by remember { mutableIntStateOf(ImageCapture.FLASH_MODE_OFF) }
+    var zoomRatio by remember { mutableFloatStateOf(1.0f) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
+    var boundCamera by remember { mutableStateOf<Camera?>(null) }
+
+    val imageCapture = remember {
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+            .setFlashMode(flashMode)
+            .build()
+    }
     var isCapturing by remember { mutableStateOf(false) }
+
+    // Auto-clear focus indicator ring after 1.5s
+    LaunchedEffect(focusPoint) {
+        if (focusPoint != null) {
+            kotlinx.coroutines.delay(1500)
+            focusPoint = null
+        }
+    }
+
+    LaunchedEffect(flashMode) {
+        try {
+            imageCapture.flashMode = flashMode
+        } catch (_: Exception) {}
+    }
+
+    LaunchedEffect(zoomRatio, boundCamera) {
+        try {
+            boundCamera?.cameraControl?.setZoomRatio(zoomRatio)
+        } catch (_: Exception) {}
+    }
 
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -535,7 +604,7 @@ fun CameraView(
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                boundCamera = cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
@@ -547,7 +616,21 @@ fun CameraView(
         }, ContextCompat.getMainExecutor(context))
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    focusPoint = offset
+                    try {
+                        val factory = previewView.meteringPointFactory
+                        val point = factory.createPoint(offset.x, offset.y)
+                        val action = FocusMeteringAction.Builder(point).build()
+                        boundCamera?.cameraControl?.startFocusAndMetering(action)
+                    } catch (_: Exception) {}
+                }
+            }
+    ) {
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize()
@@ -560,62 +643,171 @@ fun CameraView(
             scanMode = scanMode
         )
 
-        // Top Mode Switcher Bar
-        Row(
+        // Tap-to-Focus Indicator Ring
+        focusPoint?.let { point ->
+            Box(
+                modifier = Modifier
+                    .offset(x = (point.x - 30).dp, y = (point.y - 30).dp)
+                    .size(60.dp)
+                    .border(2.dp, Color(0xFF00E676), CircleShape)
+            )
+        }
+
+        // Top Controls Header: Mode Switcher + Flash Control
+        Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-                .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(24.dp))
-                .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
         ) {
-            Surface(
-                onClick = { onScanModeChange(CameraScanMode.DISEASE) },
-                shape = RoundedCornerShape(20.dp),
-                color = if (scanMode == CameraScanMode.DISEASE) Color(0xFF00E676) else Color.Transparent
+            // Mode Switcher Bar
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(24.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Surface(
+                    onClick = { onScanModeChange(CameraScanMode.DISEASE) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (scanMode == CameraScanMode.DISEASE) Color(0xFF00E676) else Color.Transparent
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Eco,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
-                    )
-                    Text(
-                        text = "Crop Disease",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Eco,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
+                        )
+                        Text(
+                            text = "Crop Disease",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scanMode == CameraScanMode.DISEASE) Color.Black else Color.White
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = { onScanModeChange(CameraScanMode.PEST) },
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color.Transparent
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                        )
+                        Text(
+                            text = "Pest ID",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                        )
+                    }
                 }
             }
 
+            // Flash Mode Toggle Button (Top Right)
             Surface(
-                onClick = { onScanModeChange(CameraScanMode.PEST) },
-                shape = RoundedCornerShape(20.dp),
-                color = if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color.Transparent
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        flashMode = when (flashMode) {
+                            ImageCapture.FLASH_MODE_OFF -> ImageCapture.FLASH_MODE_ON
+                            ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_AUTO
+                            else -> ImageCapture.FLASH_MODE_OFF
+                        }
+                    }
+                    .testTag("flash_toggle_button"),
+                color = Color.Black.copy(alpha = 0.65f),
+                shape = CircleShape,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = Icons.Default.BugReport,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                        imageVector = when (flashMode) {
+                            ImageCapture.FLASH_MODE_ON -> Icons.Default.FlashOn
+                            ImageCapture.FLASH_MODE_AUTO -> Icons.Default.FlashAuto
+                            else -> Icons.Default.FlashOff
+                        },
+                        contentDescription = "Toggle Flash Mode",
+                        tint = if (flashMode == ImageCapture.FLASH_MODE_OFF) Color.White.copy(alpha = 0.6f) else Color(0xFFFFD700),
+                        modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+        }
+
+        // Quality Guidance HUD Banner (Top Sub-Header)
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 70.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.Black.copy(alpha = 0.60f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E676).copy(alpha = 0.4f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(Color(0xFF00E676), CircleShape)
+                )
+                Text(
+                    text = "HQ CameraX AI Vision • Hold leaf 10-20 cm in clear light",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        // Macro Zoom Controls (Right Side Bar)
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp)
+                .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(20.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+                .padding(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf(1.0f, 2.0f, 3.0f).forEach { zoom ->
+                val label = when (zoom) {
+                    1.0f -> "1x"
+                    2.0f -> "2x Macro"
+                    else -> "3x Detail"
+                }
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (zoomRatio == zoom) Color(0xFF00E676) else Color.Transparent,
+                    modifier = Modifier.clickable { zoomRatio = zoom }
+                ) {
                     Text(
-                        text = "Pest Identification",
-                        fontSize = 12.sp,
+                        text = label,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (scanMode == CameraScanMode.PEST) Color.Black else Color.White
+                        color = if (zoomRatio == zoom) Color.Black else Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                     )
                 }
             }
@@ -703,7 +895,7 @@ fun CameraView(
 
             // Info hint
             Text(
-                text = if (isCapturing) "Processing photo..." else if (scanMode == CameraScanMode.PEST) "Tap shutter to identify pest" else "Tap shutter to diagnose leaf",
+                text = if (isCapturing) "Capturing HQ Crop Photo..." else if (scanMode == CameraScanMode.PEST) "Tap shutter to identify pest" else "Tap shutter to diagnose leaf",
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -1637,6 +1829,115 @@ fun DiagnosisResultView(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Andhra Pradesh Agriculture Dept & Rythu Bharosa Kendra (RBK) Location Advisory Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("ap_agri_dept_advisory_card"),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1B5E20).copy(alpha = 0.08f)),
+            border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f)),
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(Color(0xFF2E7D32), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Andhra Pradesh Govt Agri Advisory",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1B5E20)
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF2E7D32)
+                            ) {
+                                Text(
+                                    text = "RBK Direct",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Cross-referenced with ANGRAU & Rythu Bharosa Kendra Guidelines",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = if (diagnosis.ap_agri_dept_advisory.isNotBlank()) {
+                        diagnosis.ap_agri_dept_advisory
+                    } else {
+                        "Official AP Dept of Agriculture Advisory: Report ${diagnosis.disease_name} symptoms to nearest Rythu Bharosa Kendra (RBK) in your district (Guntur, Krishna, Godavari, Rayalaseema). Subsidized bio-pesticides and Neem oil formulas are available under Govt Krishi Seva."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = null,
+                            tint = Color(0xFF1B5E20),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "AP Agri Helpline: 155251",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B5E20)
+                        )
+                    }
+                    Text(
+                        text = "VAA Field Visit Enabled",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2E7D32)
+                    )
                 }
             }
         }

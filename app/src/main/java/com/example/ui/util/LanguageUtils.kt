@@ -1,5 +1,8 @@
 package com.example.ui.util
 
+import android.content.Context
+import java.util.Locale
+
 data class LanguageOption(
     val code: String,
     val name: String,
@@ -8,6 +11,12 @@ data class LanguageOption(
 )
 
 object LanguageUtils {
+    val PRIMARY_LANGUAGES = listOf(
+        LanguageOption("TE", "Telugu", "తెలుగు", "🏛️"),
+        LanguageOption("EN", "English", "English", "🇬🇧"),
+        LanguageOption("HI", "Hindi", "हिन्दी", "🇮🇳")
+    )
+
     val SUPPORTED_LANGUAGES = listOf(
         LanguageOption("TE", "Telugu", "తెలుగు (ఆంధ్రప్రదేశ్/తెలంగాణ)", "🏛️"),
         LanguageOption("EN", "English", "English", "🇬🇧"),
@@ -18,6 +27,22 @@ object LanguageUtils {
         LanguageOption("TA", "Tamil", "தமிழ்", "🛕"),
         LanguageOption("BN", "Bengali", "বাংলা", "🐅")
     )
+
+    fun updateAppLocale(context: Context, langStr: String) {
+        try {
+            val opt = getLanguageOption(langStr)
+            val locale = when (opt.code) {
+                "TE" -> Locale("te", "IN")
+                "HI" -> Locale("hi", "IN")
+                else -> Locale("en", "US")
+            }
+            Locale.setDefault(locale)
+            val config = context.resources.configuration
+            config.setLocale(locale)
+            @Suppress("DEPRECATION")
+            context.resources.updateConfiguration(config, context.resources.displayMetrics)
+        } catch (_: Exception) {}
+    }
 
     fun getLanguageOption(langStr: String): LanguageOption {
         return SUPPORTED_LANGUAGES.find {

@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.SoilSampleEntity
 import com.example.ui.KrishiViewModel
+import com.example.ui.components.ApDistrictSoilFertilityMapWidget
+import com.example.ui.components.ApNpkFertilizerCalculatorWidget
 
 enum class HeatmapMetric(val displayName: String, val unit: String) {
     PH("Soil pH Level", "pH"),
@@ -119,6 +121,16 @@ fun SoilQualityHeatmapView(
                 }
             }
         }
+
+        // --- District Soil Health Card N-P-K GIS Map Visualization Layer ---
+        ApDistrictSoilFertilityMapWidget(
+            selectedLanguage = selectedLanguage
+        )
+
+        // --- Crop N-P-K Fertilizer Application Calculator Tool ---
+        ApNpkFertilizerCalculatorWidget(
+            selectedLanguage = selectedLanguage
+        )
 
         // --- Metric Switcher Chips ---
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

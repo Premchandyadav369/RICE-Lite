@@ -29,6 +29,11 @@ import com.example.ui.KrishiViewModel
 import com.example.ui.components.RegionalWeatherAdvisorCard
 import com.example.ui.components.SeasonalThemeCard
 import com.example.ui.components.AccessibilityViewCard
+import com.example.ui.components.ApAgroClimaticHubCard
+import com.example.ui.components.ApWeatherForecastWidget
+import com.example.ui.components.ApSeasonalCropCalendarWidget
+import com.example.ui.components.ApDistrictSoilFertilityMapWidget
+import com.example.ui.components.ApNpkFertilizerCalculatorWidget
 import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +67,11 @@ fun HomeDashboardView(
 
         // --- Dynamic AP & Telangana Agricultural Seasonal Theme Card ---
         SeasonalThemeCard(
+            viewModel = viewModel
+        )
+
+        // --- Andhra Pradesh Agrarian & Agro-Climatic District Hub ---
+        ApAgroClimaticHubCard(
             viewModel = viewModel
         )
         // --- 1. User Header & Greeting Card ---
@@ -176,75 +186,25 @@ fun HomeDashboardView(
             }
         }
 
-        // --- 2. Live Weather & Rain Forecast Card ---
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.WbSunny,
-                            contentDescription = null,
-                            tint = Color(0xFFF59E0B),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Column {
-                            Text(
-                                text = "Ludhiana, Punjab • 28°C",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = Color(0xFF111827)
-                            )
-                            Text(
-                                text = "Partly Cloudy • Rain Probability: 12%",
-                                fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
-                            )
-                        }
-                    }
+        // --- 2. Live AP Weather & Rainfall Probability Forecast Dashboard Widget ---
+        ApWeatherForecastWidget(
+            selectedLanguage = selectedLanguage
+        )
 
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFF0EA5E9).copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = "Good Irrigation Day",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0EA5E9),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                }
+        // --- Interactive AP Seasonal Crop Calendar (Kharif, Rabi & Zaid Cycles) ---
+        ApSeasonalCropCalendarWidget(
+            selectedLanguage = selectedLanguage
+        )
 
-                Divider(color = Color(0xFFF3F4F6))
+        // --- District Soil Health Card Soil Fertility GIS Overlay Layer ---
+        ApDistrictSoilFertilityMapWidget(
+            selectedLanguage = selectedLanguage
+        )
 
-                // Weather Metrics Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    WeatherMetricItem(icon = Icons.Default.WaterDrop, label = "Humidity", value = "68%")
-                    WeatherMetricItem(icon = Icons.Default.Air, label = "Wind Speed", value = "12 km/h")
-                    WeatherMetricItem(icon = Icons.Default.WbSunny, label = "UV Index", value = "5.8 (Mod)")
-                    WeatherMetricItem(icon = Icons.Default.Opacity, label = "Dew Point", value = "19°C")
-                }
-            }
-        }
+        // --- N-P-K Fertilizer Application Calculator Tool ---
+        ApNpkFertilizerCalculatorWidget(
+            selectedLanguage = selectedLanguage
+        )
 
         // --- 3. Quick Action Grid Buttons ---
         Text(

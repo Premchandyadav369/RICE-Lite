@@ -72,6 +72,12 @@ fun ProfileAndHistoryView(
                     text = { Text("Offline Diseases", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
                     icon = { Icon(Icons.Default.WifiOff, contentDescription = null, modifier = Modifier.size(16.dp)) }
                 )
+                Tab(
+                    selected = subTab == 4,
+                    onClick = { subTab = 4 },
+                    text = { Text("Recovery Tracker", fontWeight = FontWeight.Bold, fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Healing, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
             }
         }
 
@@ -81,6 +87,9 @@ fun ProfileAndHistoryView(
                 1 -> HistoryScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
                 2 -> OfflineRepositoryView(viewModel = viewModel, modifier = Modifier.fillMaxSize())
                 3 -> OfflineDiseaseView(viewModel = viewModel, modifier = Modifier.fillMaxSize())
+                4 -> Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    com.example.ui.components.DiseaseRecoveryTrackerCard(viewModel = viewModel)
+                }
             }
         }
     }

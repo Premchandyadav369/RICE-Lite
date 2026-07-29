@@ -9,7 +9,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class, FieldBoundaryEntity::class, OfflineManualEntity::class, SoilSampleEntity::class], version = 8, exportSchema = false)
+import androidx.room.migration.Migration
+
+@Database(entities = [ScanItem::class, CropDiseaseEntity::class, FertilizerPlanEntity::class, NpkRequirementEntity::class, IrrigationScheduleEntity::class, FieldBoundaryEntity::class, OfflineManualEntity::class, SoilSampleEntity::class, CropDiagnosisHistoryEntity::class, CropHealthRecord::class], version = 10, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scanItemDao(): ScanItemDao
     abstract fun cropDiseaseDao(): CropDiseaseDao
@@ -19,10 +21,32 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun fieldBoundaryDao(): FieldBoundaryDao
     abstract fun offlineManualDao(): OfflineManualDao
     abstract fun soilSampleDao(): SoilSampleDao
+    abstract fun cropDiagnosisHistoryDao(): CropDiagnosisHistoryDao
+    abstract fun cropHealthRecordDao(): CropHealthRecordDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `crop_health_records` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `cropName` TEXT NOT NULL,
+                        `fieldPlotName` TEXT NOT NULL,
+                        `healthStatus` TEXT NOT NULL,
+                        `diagnosedDisease` TEXT NOT NULL,
+                        `geminiDiagnosisText` TEXT NOT NULL,
+                        `recoveryStage` TEXT NOT NULL,
+                        `recoveryProgressPct` INTEGER NOT NULL,
+                        `photoUri` TEXT,
+                        `timestamp` INTEGER NOT NULL,
+                        `recommendedAction` TEXT NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -31,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "krishi_drishti_db"
                 )
+                .addMigrations(MIGRATION_9_10)
                 .fallbackToDestructiveMigration()
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
@@ -63,6 +88,8 @@ abstract class AppDatabase : RoomDatabase() {
                         instance.fieldBoundaryDao().insertBoundaries(initialFieldBoundaries)
                         instance.offlineManualDao().insertManuals(initialOfflineManuals)
                         instance.soilSampleDao().insertSamples(initialSoilSamples)
+                        instance.cropDiagnosisHistoryDao().insertAll(initialDiagnosisHistory)
+                        instance.cropHealthRecordDao().insertAll(initialCropHealthRecords)
                     } catch (_: Exception) {}
                 }
 
@@ -303,6 +330,86 @@ abstract class AppDatabase : RoomDatabase() {
             SoilSampleEntity(zoneName = "Central Zone B1", gridXRatio = 0.5f, gridYRatio = 0.5f, pH = 7.0f, organicCarbonPct = 0.68f, nitrogenKgPerAcre = 98f, phosphorusKgPerAcre = 20f, potassiumKgPerAcre = 145f, electricalConductivity = 0.7f, moisturePct = 30f, soilType = "Alluvial Loam"),
             SoilSampleEntity(zoneName = "South-West Zone C1", gridXRatio = 0.25f, gridYRatio = 0.8f, pH = 8.1f, organicCarbonPct = 0.38f, nitrogenKgPerAcre = 60f, phosphorusKgPerAcre = 10f, potassiumKgPerAcre = 90f, electricalConductivity = 1.8f, moisturePct = 22f, soilType = "Alkaline Heavy Clay"),
             SoilSampleEntity(zoneName = "South-East Zone C2", gridXRatio = 0.8f, gridYRatio = 0.75f, pH = 6.5f, organicCarbonPct = 0.82f, nitrogenKgPerAcre = 125f, phosphorusKgPerAcre = 28f, potassiumKgPerAcre = 175f, electricalConductivity = 0.5f, moisturePct = 38f, soilType = "Fertile Silt Loam")
+        )
+
+        private val initialDiagnosisHistory = listOf(
+            CropDiagnosisHistoryEntity(
+                cropName = "Chilli (Mirchi)",
+                fieldPlotName = "Guntur East Plot A",
+                diseaseName = "Chilli Black Thrips & Leaf Curl",
+                severityLevel = "Severe (70%)",
+                recoveryStage = "Initial Diagnosis",
+                recoveryProgressPct = 20,
+                geminiDiagnosisText = "Gemini AI Diagnosis: Heavy Black Thrips infestation causing upward leaf curling. Recommended: Neem Oil 10,000 PPM @ 2ml/L + sticky traps.",
+                organicRemedy = "Spray Neem Oil 10,000 PPM @ 2ml/L with wetting agent. Hang 25 blue sticky traps/acre.",
+                chemicalRemedy = "Fipronil 5% SC @ 2ml/L or Spinetoram 11.7% SC @ 0.8ml/L.",
+                timestamp = System.currentTimeMillis() - 86400000L * 10,
+                treatmentNotes = "Applied initial Neem Oil spray + blue traps across Plot A."
+            ),
+            CropDiagnosisHistoryEntity(
+                cropName = "Chilli (Mirchi)",
+                fieldPlotName = "Guntur East Plot A",
+                diseaseName = "Chilli Black Thrips & Leaf Curl",
+                severityLevel = "Moderate (35%)",
+                recoveryStage = "Day 5 Post-Treatment",
+                recoveryProgressPct = 65,
+                geminiDiagnosisText = "Gemini AI Follow-up: 50% reduction in active thrips count observed under leaves. New shoot growth shows reduced curling.",
+                organicRemedy = "Bio-pesticide spray: Beauveria bassiana @ 5g/L during late evening hours.",
+                chemicalRemedy = "Maintain organic barrier spray; chemical intervention no longer critical.",
+                timestamp = System.currentTimeMillis() - 86400000L * 5,
+                treatmentNotes = "Beauveria bassiana bio-spray applied. Thrips population significantly controlled."
+            ),
+            CropDiagnosisHistoryEntity(
+                cropName = "Chilli (Mirchi)",
+                fieldPlotName = "Guntur East Plot A",
+                diseaseName = "Chilli Black Thrips & Leaf Curl",
+                severityLevel = "Healthy / Recovered (5%)",
+                recoveryStage = "Day 10 - Fully Recovered",
+                recoveryProgressPct = 95,
+                geminiDiagnosisText = "Gemini AI Final Check: Plot A successfully recovered! Leaves are vibrant green with full canopy recovery.",
+                organicRemedy = "Foliar spray of Panchagavya 3% or 19-19-19 water soluble fertilizer to boost flowering.",
+                chemicalRemedy = "None required. Crop is healthy.",
+                timestamp = System.currentTimeMillis() - 86400000L * 1,
+                treatmentNotes = "Plot completely green and flowering. Recovery verified by AI scan."
+            ),
+            CropDiagnosisHistoryEntity(
+                cropName = "Paddy (Rice)",
+                fieldPlotName = "Krishna Delta Field 3",
+                diseaseName = "Rice Blast (Magnaporthe oryzae)",
+                severityLevel = "Moderate (40%)",
+                recoveryStage = "Initial Diagnosis",
+                recoveryProgressPct = 30,
+                geminiDiagnosisText = "Gemini AI Diagnosis: Spindle-shaped lesions with reddish-brown margins observed on upper leaf blades.",
+                organicRemedy = "Spray Pseudomonas fluorescens @ 10g/L. Drain excess water for 2 days to lower humidity.",
+                chemicalRemedy = "Tricyclazole 75% WP @ 0.6g/L or Isoprothiolane 40% EC @ 1.5ml/L.",
+                timestamp = System.currentTimeMillis() - 86400000L * 3,
+                treatmentNotes = "Drained excess standing water. Applied Tricyclazole 75% WP spray."
+            )
+        )
+
+        private val initialCropHealthRecords = listOf(
+            CropHealthRecord(
+                cropName = "Chilli (Mirchi)",
+                fieldPlotName = "Guntur Plot A",
+                healthStatus = "Recovering",
+                diagnosedDisease = "Chilli Black Thrips",
+                geminiDiagnosisText = "Gemini AI: Black thrips population decreased by 60%. Canopy leaf curling reduced.",
+                recoveryStage = "Day 7 Treatment",
+                recoveryProgressPct = 75,
+                timestamp = System.currentTimeMillis() - 86400000L * 2,
+                recommendedAction = "Apply follow-up Neem Oil spray (10,000 PPM) and keep blue sticky traps active."
+            ),
+            CropHealthRecord(
+                cropName = "Paddy (Rice)",
+                fieldPlotName = "Krishna Field 2",
+                healthStatus = "Healthy",
+                diagnosedDisease = "None",
+                geminiDiagnosisText = "Gemini AI: Leaf tissue is uniform green without blast or bacterial blight spots.",
+                recoveryStage = "Tillering Stage",
+                recoveryProgressPct = 100,
+                timestamp = System.currentTimeMillis() - 86400000L * 1,
+                recommendedAction = "Maintain 2-5cm standing water level and top-dress Urea 25kg/acre."
+            )
         )
     }
 }

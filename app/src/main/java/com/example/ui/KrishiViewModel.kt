@@ -83,9 +83,17 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
     private val database = AppDatabase.getDatabase(application)
     private val repository = ScanRepository(database.scanItemDao())
     val diseaseRepository = CropDiseaseRepository(database.cropDiseaseDao())
+    val diagnosisHistoryRepository = com.example.data.CropDiagnosisHistoryRepository(database.cropDiagnosisHistoryDao())
     private val fertilizerPlanDao = database.fertilizerPlanDao()
     private val offlineManualDao = database.offlineManualDao()
     private val soilSampleDao = database.soilSampleDao()
+
+    val cropDiagnosisHistory: StateFlow<List<com.example.data.CropDiagnosisHistoryEntity>> = diagnosisHistoryRepository.allHistory
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     val savedFertilizerPlans: StateFlow<List<com.example.data.FertilizerPlanEntity>> = fertilizerPlanDao.getAllPlans()
         .stateIn(
@@ -299,7 +307,7 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
                 val defaultPrompt = if (isReceiptScan) {
                     "Scan and parse this Mandi/APMC transaction receipt. Extract the Crop Name, Quantity/Weight, Price per quintal, Date, Total payout, and any fees. Deliver the extracted details in a clean tabular format, followed by brief financial tips."
                 } else {
-                    "Examine this crop leaf image. Identify: 1. Crop Name, 2. Disease/Deficiency Name, 3. Causes, 4. Step-by-step Organic remedies, 5. Standard Chemical remedies. Format the output with clear bullet points, titles, and highlight key terms."
+                    "Examine this crop leaf image. Identify: 1. Crop Name, 2. Disease/Deficiency Name, 3. Causes, 4. Step-by-step Organic remedies, 5. Standard Chemical remedies, 6. Official Andhra Pradesh Agriculture Department & Rythu Bharosa Kendra (RBK) advisory cross-reference for local farmers (Guntur, Krishna Delta, Rayalaseema, Godavari, North Coastal AP). Format the output with clear bullet points, titles, and highlight key terms."
                 }
 
                 val finalPrompt = if (customText.trim().isNotEmpty()) {
@@ -324,6 +332,9 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
                 val systemInstructionText = """
                     You are "కృషిదృష్టి (KrishiDrishti)", the official AI Agricultural Super Advisor for farmers across Andhra Pradesh & Telangana (Rayalaseema, Coastal Andhra, Telangana Black Cotton & Krishna Delta Belts).
                     Your goal is to provide deep, detailed, and highly practical agricultural advisory, crop health diagnosis (Chilli/Mirchi, Paddy, Cotton, Turmeric, Maize, Mango), and Mandi/Rythu Bazar receipt analysis tailored to Andhra Pradesh and Telangana APMCs (Guntur, Warangal, Nizamabad, Kurnool, Khammam, Vijayawada).
+                    
+                    LOCATION & GOVERNMENT ADVISORY MANDATE:
+                    Always cross-reference diagnosis results with official Andhra Pradesh Department of Agriculture guidelines, Rythu Bharosa Kendra (RBK) seasonal pest alerts, and Acharya N.G. Ranga Agricultural University (ANGRAU) advisory protocols for regional farmers.
                     
                     CRITICAL INSTRUCTION:
                     You MUST respond completely and fluently in the requested language: $languageStr.
@@ -363,6 +374,26 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
                     withContext(Dispatchers.IO) {
                         val insertedId = repository.insertScan(scanItem)
                         val savedItem = scanItem.copy(id = insertedId.toInt())
+
+                        if (!isReceiptScan) {
+                            val diagnosisRecord = com.example.data.CropDiagnosisHistoryEntity(
+                                cropName = scanItem.cropName,
+                                fieldPlotName = "Main Field Plot",
+                                diseaseName = scanItem.detectedIssue,
+                                severityLevel = "Moderate (Initial Diagnosis)",
+                                recoveryStage = "Initial Diagnosis",
+                                recoveryProgressPct = 25,
+                                geminiDiagnosisText = responseText,
+                                organicRemedy = "See full Gemini AI advisory in record details.",
+                                chemicalRemedy = "See full Gemini AI advisory in record details.",
+                                imagePath = localImagePath,
+                                language = languageStr,
+                                timestamp = System.currentTimeMillis(),
+                                treatmentNotes = "Initial AI diagnosis saved on ${java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())}"
+                            )
+                            diagnosisHistoryRepository.insert(diagnosisRecord)
+                        }
+
                         _scanUiState.value = ScanUiState.Success(responseText, savedItem)
                     }
                 } else {
@@ -396,5 +427,29 @@ class KrishiViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         return "Leaf Spots / Healthy"
+    }
+
+    fun addDiagnosisHistoryRecord(item: com.example.data.CropDiagnosisHistoryEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            diagnosisHistoryRepository.insert(item)
+        }
+    }
+
+    fun updateDiagnosisHistoryRecord(item: com.example.data.CropDiagnosisHistoryEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            diagnosisHistoryRepository.update(item)
+        }
+    }
+
+    fun deleteDiagnosisHistoryRecord(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            diagnosisHistoryRepository.deleteById(id)
+        }
+    }
+
+    fun clearAllDiagnosisHistory() {
+        viewModelScope.launch(Dispatchers.IO) {
+            diagnosisHistoryRepository.clearAll()
+        }
     }
 }

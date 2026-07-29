@@ -73,7 +73,8 @@ data class CropDiagnosis(
     val confidence: Float, // e.g. 0.92
     val symptoms: List<String>,
     val causes: List<String>,
-    val treatments: TreatmentPlan
+    val treatments: TreatmentPlan,
+    val ap_agri_dept_advisory: String = ""
 )
 
 @Serializable
