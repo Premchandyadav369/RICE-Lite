@@ -21,10 +21,11 @@ object LanguageUtils {
         LanguageOption("TE", "Telugu", "తెలుగు (ఆంధ్రప్రదేశ్/తెలంగాణ)", "🏛️"),
         LanguageOption("EN", "English", "English", "🇬🇧"),
         LanguageOption("HI", "Hindi", "हिन्दी", "🇮🇳"),
+        LanguageOption("TA", "Tamil", "தமிழ்", "🛕"),
+        LanguageOption("KN", "Kannada", "ಕನ್ನಡ", "🐘"),
         LanguageOption("PA", "Punjabi", "ਪੰਜਾਬੀ", "🌾"),
         LanguageOption("MR", "Marathi", "मराठी", "🚩"),
         LanguageOption("GU", "Gujarati", "ગુજરાતી", "🦁"),
-        LanguageOption("TA", "Tamil", "தமிழ்", "🛕"),
         LanguageOption("BN", "Bengali", "বাংলা", "🐅")
     )
 
@@ -34,6 +35,12 @@ object LanguageUtils {
             val locale = when (opt.code) {
                 "TE" -> Locale("te", "IN")
                 "HI" -> Locale("hi", "IN")
+                "TA" -> Locale("ta", "IN")
+                "KN" -> Locale("kn", "IN")
+                "PA" -> Locale("pa", "IN")
+                "MR" -> Locale("mr", "IN")
+                "GU" -> Locale("gu", "IN")
+                "BN" -> Locale("bn", "IN")
                 else -> Locale("en", "US")
             }
             Locale.setDefault(locale)
@@ -48,15 +55,9 @@ object LanguageUtils {
         return SUPPORTED_LANGUAGES.find {
             langStr.contains(it.name, ignoreCase = true) ||
                     langStr.contains(it.nativeName, ignoreCase = true) ||
-                    langStr.equals(it.code, ignoreCase = true)
-        } ?: SUPPORTED_LANGUAGES[0]
-    }
-
-    fun getNavLabel(key: String, langStr: String): String {
-        val opt = getLanguageOption(langStr)
-        return when (key) {
-            "home" -> when (opt.code) {
+                    langStr.equals(            "home" -> when (opt.code) {
                 "HI" -> "होम"
+                "KN" -> "ಹೋಮ್"
                 "PA" -> "ਹੋਮ"
                 "MR" -> "मुख्य"
                 "GU" -> "હોમ"
@@ -67,6 +68,7 @@ object LanguageUtils {
             }
             "farm" -> when (opt.code) {
                 "HI" -> "कृषि"
+                "KN" -> "ಫಾರ್ಮ್"
                 "PA" -> "ਖੇਤ"
                 "MR" -> "शेत"
                 "GU" -> "ખેતર"
@@ -77,6 +79,7 @@ object LanguageUtils {
             }
             "market" -> when (opt.code) {
                 "HI" -> "मंडी"
+                "KN" -> "ಮಾರುಕಟ್ಟೆ"
                 "PA" -> "ਮੰਡੀ"
                 "MR" -> "बाजार"
                 "GU" -> "માર્કેટ"
@@ -87,6 +90,7 @@ object LanguageUtils {
             }
             "finance" -> when (opt.code) {
                 "HI" -> "वित्त"
+                "KN" -> "ಫೈನಾನ್ಸ್"
                 "PA" -> "ਵਿੱਤ"
                 "MR" -> "वित्त"
                 "GU" -> "નાણા"
@@ -97,9 +101,26 @@ object LanguageUtils {
             }
             "profile" -> when (opt.code) {
                 "HI" -> "प्रोफाइल"
+                "KN" -> "ಪ್ರೊಫೈಲ್"
                 "PA" -> "ਪ੍ਰੋਫਾਈਲ"
                 "MR" -> "प्रोफाईल"
                 "GU" -> "પ્રોફાઇલ"
+                "TE" -> "ప్రొఫైల్"
+                "TA" -> "சுயவிவரம்"
+                "BN" -> "প্রোফাইল"
+                else -> "Profile"
+            }
+            "scanner" -> when (opt.code) {
+                "HI" -> "एआई निदान"
+                "KN" -> "AI ಸ್ಕ್ಯಾನರ್"
+                "PA" -> "AI ਨਿਦਾਨ"
+                "MR" -> "AI निदान"
+                "GU" -> "AI નિદાન"
+                "TE" -> "AI స్కానర్"
+                "TA" -> "AI சோதனை"
+                "BN" -> "AI স্ক্যানਾਰ"
+                else -> "AI Scanner"
+            }��્રોફાઇલ"
                 "TE" -> "ప్రొఫైల్"
                 "TA" -> "சுயவிவரம்"
                 "BN" -> "প্রোফাইল"

@@ -27,13 +27,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val currentSeason by krishiViewModel.currentAgriSeason.collectAsState()
             CropDiseaseScannerTheme(agriSeason = currentSeason) {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ScannerScreen(
-                        scannerViewModel = scannerViewModel,
-                        krishiViewModel = krishiViewModel,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                ScannerScreen(
+                    scannerViewModel = scannerViewModel,
+                    krishiViewModel = krishiViewModel,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

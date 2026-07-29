@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ரைஸ் அக்ரிடெக்</string>
+    <string name="nav_home">முகப்பு</string>
+    <string name="nav_farm">பண்ணை</string>
+    <string name="nav_market">சந்தை</string>
+    <string name="nav_finance">நிதி</string>
+    <string name="nav_profile">சுயவிவரம்</string>
+    <string name="nav_scanner">AI சோதனை</string>
+    <string name="select_language">மொழியைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="active_cultivar">செயலில் உள்ள ரகம்: BPT 5204 (சம்பா மசூரி)</string>
+    <string name="tillering_stage_info">தூர்கட்டும் பருவம் • நீர் மட்டம்: 35மிமீ உகந்தது • நோய் அபாயம்: குறைவு</string>
+    <string name="diagnose">கண்டறிதல்</string>
+    <string name="scan_rice_leaf">அரிசி இலையை ஸ்கேன் செய்க</string>
+    <string name="super_app_title">கிருஷி சூப்பர் ஆப்</string>
+    <string name="weather_advisory">வானிலை மற்றும் பயிர் ஆலோசனை</string>
+    <string name="mandi_prices">வேளாண் சந்தை &amp; விலைகள்</string>
+    <string name="pest_radar">பூச்சி &amp; நோய் ரேடார்</string>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ರೈಸ್ ಅಗ್ರಿಟೆಕ್</string>
+    <string name="nav_home">ಹೋಮ್</string>
+    <string name="nav_farm">ಫಾರ್ಮ್</string>
+    <string name="nav_market">ಮಾರುಕಟ್ಟೆ</string>
+    <string name="nav_finance">ಫೈನಾನ್ಸ್</string>
+    <string name="nav_profile">ಪ್ರೊಫೈಲ್</string>
+    <string name="nav_scanner">AI ಸ್ಕ್ಯಾನರ್</string>
+    <string name="select_language">ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="active_cultivar">ಸಕ್ರಿಯ ತಳಿ: BPT 5204 (ಸಾಂಬಾ ಮಸೂರಿ)</string>
+    <string name="tillering_stage_info">ತೆನೆ ಒಡೆಯುವ ಹಂತ • ನೀರಿನ ಮಟ್ಟ: 35mm ಸೂಕ್ತ • ರೋಗ ಅಪಾಯ: ಕಡಿಮೆ</string>
+    <string name="diagnose">ರೋಗನಿರ್ಣಯ</string>
+    <string name="scan_rice_leaf">ಭತ್ತದ ಎಲೆಯನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+    <string name="super_app_title">ಕೃಷಿ ಸೂಪರ್ ಆಪ್</string>
+    <string name="weather_advisory">ಹವಾಮಾನ ಮತ್ತು ಬೆಳೆ ಸಲಹೆ</string>
+    <string name="mandi_prices">ಕೃಷಿ ಮಾರುಕಟ್ಟೆ &amp; ದರಗಳು</string>
+    <string name="pest_radar">ಕೀಟ ಮತ್ತು ರೋಗ ರೇಡಾರ್</string>
+</resources>

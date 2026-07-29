@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">రైస్ అగ్రిటెక్</string>
+    <string name="nav_home">హోమ్</string>
+    <string name="nav_farm">పొలం</string>
+    <string name="nav_market">మార్కెట్</string>
+    <string name="nav_finance">ఫైనాన్స్</string>
+    <string name="nav_profile">ప్రొఫైల్</string>
+    <string name="nav_scanner">AI స్కానర్</string>
+    <string name="select_language">భాషను ఎంచుకోండి</string>
+    <string name="active_cultivar">ప్రస్తుత రకం: BPT 5204 (సాంబ మసూరి)</string>
+    <string name="tillering_stage_info">పిలకలు తొడిగే దశ • నీటి మట్టం: 35mm ఆదర్శం • అగ్గి తెగులు ముప్పు: తక్కువ</string>
+    <string name="diagnose">రోగ నిర్ధారణ</string>
+    <string name="scan_rice_leaf">వరి ఆకును స్కాన్ చేయండి</string>
+    <string name="super_app_title">కృషి దృష్టీ సూపర్ యాప్</string>
+    <string name="weather_advisory">ప్రాంతీయ వాతావరణం &amp; పంట సలహా</string>
+    <string name="mandi_prices">వ్యవసాయ మార్కెట్ &amp; ధరలు</string>
+    <string name="pest_radar">పురుగులు &amp; తెగుళ్ళ రాడార్</string>
+</resources>

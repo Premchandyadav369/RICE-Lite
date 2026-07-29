@@ -253,7 +253,9 @@ fun MarketplaceView(
             2 -> {
                 // COLD STORAGE & TRANSPORT LOGISTICS
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Card(

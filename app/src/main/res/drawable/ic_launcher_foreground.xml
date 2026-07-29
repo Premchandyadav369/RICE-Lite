@@ -4,14 +4,71 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Stylized Golden Rice Ear & Sprout Emblem -->
+    
+    <!-- Outer Golden Emblem Ring -->
     <path
         android:fillColor="#F59E0B"
-        android:pathData="M54,20 C36,20 28,36 24,50 C30,48 36,47 42,47 C60,47 78,57 90,42 C96,34 96,20 54,20 Z" />
-    <path
-        android:fillColor="#22C55E"
-        android:pathData="M54,30 C64,38 58,50 50,56 C46,48 44,40 54,30 Z" />
+        android:pathData="M54,16 C33.01,16 16,33.01 16,54 C16,74.99 33.01,92 54,92 C74.99,92 92,74.99 92,54 C92,33.01 74.99,16 54,16 Z M54,22 C71.67,22 86,36.33 86,54 C86,71.67 71.67,86 54,86 C36.33,86 22,71.67 22,54 C22,36.33 36.33,22 54,22 Z" />
+
+    <!-- Rice Paddy Stem / Culm -->
     <path
         android:fillColor="#10B981"
-        android:pathData="M48,50 C38,62 30,76 28,88 L34,88 C38,78 44,66 52,56 Z" />
+        android:pathData="M52,78 L56,78 L56,42 Q54,30 46,22 L43,25 Q50,32 52,42 Z" />
+
+    <!-- Golden Rice Grain 1 (Top Tip) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M54,20 C51,23 51,29 55,31 C58,30 60,25 57,21 C56,20 55,20 54,20 Z" />
+
+    <!-- Golden Rice Grain 2 (Top Left) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M44,28 C40,29 38,34 41,37 C45,38 48,34 47,30 C46,28 45,28 44,28 Z" />
+
+    <!-- Golden Rice Grain 3 (Top Right) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M60,28 C64,28 67,32 65,36 C62,38 57,35 58,31 C59,28 59,28 60,28 Z" />
+
+    <!-- Golden Rice Grain 4 (Mid Left) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M40,38 C35,39 33,45 37,48 C41,49 45,45 43,40 C42,38 41,38 40,38 Z" />
+
+    <!-- Golden Rice Grain 5 (Mid Right) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M64,38 C68,38 72,42 70,47 C66,49 61,46 62,41 C63,38 63,38 64,38 Z" />
+
+    <!-- Golden Rice Grain 6 (Lower Left) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M38,49 C33,51 32,57 36,60 C40,61 44,56 42,51 C41,49 39,49 38,49 Z" />
+
+    <!-- Golden Rice Grain 7 (Lower Right) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M66,49 C71,49 74,54 72,59 C68,61 63,57 64,52 C65,49 65,49 66,49 Z" />
+
+    <!-- Lush Green Rice Flag Leaf 1 -->
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M52,65 Q30,62 20,44 Q32,54 52,58 Z" />
+
+    <!-- Lush Green Rice Flag Leaf 2 -->
+    <path
+        android:fillColor="#15803D"
+        android:pathData="M56,60 Q78,55 88,38 Q76,50 56,54 Z" />
+
+    <!-- Golden Grain Highlights (Shimmer Dots) -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M55,23 C54,24 54,26 55,27 C56,26 56,24 55,23 Z" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M43,31 C42,32 42,34 43,35 C44,34 44,32 43,31 Z" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M61,31 C60,32 60,34 61,35 C62,34 62,32 61,31 Z" />
 </vector>
+

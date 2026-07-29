@@ -55,6 +55,142 @@ fun HomeDashboardView(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // --- BEAST MODE HERO OPENING SCREEN HEADER: RICE KRISHI AI & GEMMA 4 EMBLEM ---
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF064E3B),
+                                Color(0xFF14532D),
+                                Color(0xFF15803D)
+                            )
+                        )
+                    )
+                    .padding(20.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Top Row: Rice Logo Emblem Badge + Live Status Indicator
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF111827),
+                                border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFF59E0B)),
+                                modifier = Modifier.size(54.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.ic_launcher_foreground),
+                                        contentDescription = "Rice Grain Stalk Emblem Logo",
+                                        tint = Color.Unspecified,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                }
+                            }
+
+                            Column {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "🌾 RICE KRISHI AI",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color(0xFFFBBF24)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFF22C55E).copy(alpha = 0.2f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22C55E))
+                                    ) {
+                                        Text(
+                                            text = "GEMMA 4",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF4ADE80),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Andhra & Telangana Paddy Intelligence System",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.85f)
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = onOpenAiScan,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(Color(0xFFF59E0B), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Scan Rice Leaf",
+                                tint = Color(0xFF111827),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    // Rice Cultivar Active Monitor Bar
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.Black.copy(alpha = 0.25f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFBBF24).copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "🌾 Active Cultivar: BPT 5204 (Samba Mahsuri)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "Tillering Stage • Standing Water: 35mm Optimal • Blast Risk: 0.08 (LOW)",
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF86EFAC)
+                                )
+                            }
+                            Button(
+                                onClick = onOpenAiScan,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("Diagnose", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // --- Regional Weather & AP/TS Weather-Linked Crop Advisory with Voice ---
         RegionalWeatherAdvisorCard(
             selectedLanguage = selectedLanguage

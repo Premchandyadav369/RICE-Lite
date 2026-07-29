@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">राइस एग्रीटेक</string>
+    <string name="nav_home">होम</string>
+    <string name="nav_farm">कृषि</string>
+    <string name="nav_market">मंडी</string>
+    <string name="nav_finance">वित्त</string>
+    <string name="nav_profile">प्रोफाइल</string>
+    <string name="nav_scanner">एआई स्कैनर</string>
+    <string name="select_language">भाषा चुनें</string>
+    <string name="active_cultivar">सक्रिय किस्म: बीपीटी 5204 (सांभा मसूरी)</string>
+    <string name="tillering_stage_info">कल्ले निकलने की अवस्था • जल स्तर: 35 मिमी अनुकूल • झुलसा रोग जोखिम: कम</string>
+    <string name="diagnose">निदान करें</string>
+    <string name="scan_rice_leaf">धान की पत्ती स्कैन करें</string>
+    <string name="super_app_title">कृषि-दृष्टि सुपर ऐप</string>
+    <string name="weather_advisory">क्षेत्रीय मौसम और फसल सलाह</string>
+    <string name="mandi_prices">कृषि मंडी और लाइव भाव</string>
+    <string name="pest_radar">कीट एवं रोग राडार</string>
+</resources>

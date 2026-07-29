@@ -47,6 +47,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.PathEffect
+import kotlin.math.pow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -927,6 +929,8 @@ fun ScannerTargetOverlay(
         val boxHeight = boxWidth * 1.25f
         val left = (width - boxWidth) / 2
         val top = (height - boxHeight) / 2 - 40
+        val centerX = left + boxWidth / 2
+        val centerY = top + boxHeight / 2
 
         // Translucent dark background mask
         drawRect(
@@ -948,7 +952,7 @@ fun ScannerTargetOverlay(
         val gridCols = 4
         val rowHeight = boxHeight / gridRows
         val colWidth = boxWidth / gridCols
-        val gridColor = Color(0xFF00E676).copy(alpha = 0.15f)
+        val gridColor = Color(0xFF00E676).copy(alpha = 0.12f)
 
         for (i in 1 until gridCols) {
             val x = left + i * colWidth
@@ -959,10 +963,109 @@ fun ScannerTargetOverlay(
             drawLine(gridColor, Offset(left, y), Offset(left + boxWidth, y), strokeWidth = 1f)
         }
 
+        // --- SEMI-TRANSPARENT LEAF ALIGNMENT SILHOUETTE GUIDE ---
+        val leafWidth = boxWidth * 0.52f
+        val leafHeight = boxHeight * 0.62f
+        val leafTop = centerY - leafHeight * 0.48f
+        val leafBottom = centerY + leafHeight * 0.42f
+        val accentColor = if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color(0xFF00E676)
+
+        // Leaf outline contour path
+        val leafPath = Path().apply {
+            moveTo(centerX, leafTop)
+            cubicTo(
+                centerX + leafWidth * 0.65f, leafTop + leafHeight * 0.25f,
+                centerX + leafWidth * 0.55f, leafBottom - leafHeight * 0.15f,
+                centerX, leafBottom
+            )
+            cubicTo(
+                centerX - leafWidth * 0.55f, leafBottom - leafHeight * 0.15f,
+                centerX - leafWidth * 0.65f, leafTop + leafHeight * 0.25f,
+                centerX, leafTop
+            )
+            close()
+        }
+
+        // 1. Semi-transparent gradient fill inside leaf silhouette
+        val leafGradient = Brush.radialGradient(
+            colors = listOf(
+                accentColor.copy(alpha = 0.12f * pulseAlpha),
+                accentColor.copy(alpha = 0.03f)
+            ),
+            center = Offset(centerX, centerY),
+            radius = leafWidth * 0.75f
+        )
+        drawPath(leafPath, brush = leafGradient)
+
+        // 2. Dashed animated border line for leaf frame
+        drawPath(
+            path = leafPath,
+            color = accentColor.copy(alpha = pulseAlpha * 0.75f),
+            style = Stroke(
+                width = 3.5f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 12f), (scanProgress * 30f))
+            )
+        )
+
+        // 3. Central midrib stem vein
+        drawLine(
+            color = accentColor.copy(alpha = pulseAlpha * 0.85f),
+            start = Offset(centerX, leafBottom + 20f),
+            end = Offset(centerX, leafTop + 15f),
+            strokeWidth = 2.5f
+        )
+
+        // 4. Secondary lateral branching veins
+        val veinPairs = 5
+        for (i in 1..veinPairs) {
+            val fraction = i / (veinPairs + 1f)
+            val veinY = leafBottom - (leafBottom - leafTop) * fraction
+            val veinWidthFactor = (1f - ((fraction - 0.5f) * 1.5f).pow(2)).coerceIn(0.25f, 1f)
+            val veinLength = (leafWidth * 0.40f) * veinWidthFactor
+
+            // Right lateral vein
+            val rightVeinPath = Path().apply {
+                moveTo(centerX, veinY)
+                quadraticTo(
+                    centerX + veinLength * 0.6f, veinY - 10f,
+                    centerX + veinLength, veinY - 22f
+                )
+            }
+            drawPath(
+                path = rightVeinPath,
+                color = accentColor.copy(alpha = 0.45f),
+                style = Stroke(width = 1.8f)
+            )
+
+            // Left lateral vein
+            val leftVeinPath = Path().apply {
+                moveTo(centerX, veinY)
+                quadraticTo(
+                    centerX - veinLength * 0.6f, veinY - 10f,
+                    centerX - veinLength, veinY - 22f
+                )
+            }
+            drawPath(
+                path = leftVeinPath,
+                color = accentColor.copy(alpha = 0.45f),
+                style = Stroke(width = 1.8f)
+            )
+        }
+
+        // Additional Focal Target in Pest Mode
+        if (scanMode == CameraScanMode.PEST) {
+            drawCircle(
+                color = Color(0xFFFF9800).copy(alpha = pulseAlpha * 0.8f),
+                radius = 42f,
+                center = Offset(centerX, centerY),
+                style = Stroke(width = 2.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f))
+            )
+        }
+
         // Corner guiding brackets
         val bracketLength = 48f
         val thickness = 10f
-        val bracketColor = Color(0xFF00E676).copy(alpha = pulseAlpha)
+        val bracketColor = accentColor.copy(alpha = pulseAlpha)
 
         // Top Left
         drawLine(bracketColor, Offset(left, top), Offset(left + bracketLength, top), thickness)
@@ -981,33 +1084,31 @@ fun ScannerTargetOverlay(
         drawLine(bracketColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - bracketLength), thickness)
 
         // Center reticle crosshair
-        val centerX = left + boxWidth / 2
-        val centerY = top + boxHeight / 2
-        val crossLength = 20f
-        val crossColor = Color(0xFF00E676).copy(alpha = 0.6f)
+        val crossLength = 18f
+        val crossColor = accentColor.copy(alpha = 0.6f)
         drawLine(crossColor, Offset(centerX - crossLength, centerY), Offset(centerX + crossLength, centerY), 2f)
         drawLine(crossColor, Offset(centerX, centerY - crossLength), Offset(centerX, centerY + crossLength), 2f)
 
         // Animated laser scan sweep
         val lineY = top + (boxHeight * scanProgress)
         drawLine(
-            color = Color(0xFF00E676),
+            color = accentColor,
             start = Offset(left + 2f, lineY),
             end = Offset(left + boxWidth - 2f, lineY),
-            strokeWidth = 8f
+            strokeWidth = 6f
         )
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFF00E676).copy(alpha = 0.45f),
-                    Color(0xFF00E676).copy(alpha = 0.08f),
+                    accentColor.copy(alpha = 0.40f),
+                    accentColor.copy(alpha = 0.08f),
                     Color.Transparent
                 ),
                 startY = lineY,
-                endY = lineY + 80f
+                endY = lineY + 70f
             ),
             topLeft = Offset(left + 2f, lineY),
-            size = Size(boxWidth - 4f, 80f)
+            size = Size(boxWidth - 4f, 70f)
         )
     }
 
@@ -1017,12 +1118,12 @@ fun ScannerTargetOverlay(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 70.dp)
+            modifier = Modifier.padding(top = 68.dp)
         ) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = Color.Black.copy(alpha = 0.75f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00E676).copy(alpha = 0.6f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, (if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color(0xFF00E676)).copy(alpha = 0.6f))
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -1032,7 +1133,7 @@ fun ScannerTargetOverlay(
                     Box(
                         modifier = Modifier
                             .size(10.dp)
-                            .background(Color(0xFF00E676), CircleShape)
+                            .background(if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color(0xFF00E676), CircleShape)
                     )
                     Text(
                         text = if (scanMode == CameraScanMode.PEST) "GEMMA 4 REAL-TIME PEST VISION" else "GEMMA 4 REAL-TIME LEAF VISION",
@@ -1046,12 +1147,75 @@ fun ScannerTargetOverlay(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = if (scanMode == CameraScanMode.PEST) "Center pest infestation or bug damage in target" else "Center infected crop leaf within target area",
-                color = Color.White.copy(alpha = 0.9f),
-                fontWeight = FontWeight.Medium,
-                fontSize = 13.sp
-            )
+            // Guidance Chip for Leaf Frame Alignment
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color.Black.copy(alpha = 0.65f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = if (scanMode == CameraScanMode.PEST) "🐛 Align pest damage inside target circle" else "🌿 Fit crop leaf inside semi-transparent green frame",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(180.dp))
+
+            // On-screen overlay alignment badges (Distance, Light, Alignment)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.Black.copy(alpha = 0.70f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, (if (scanMode == CameraScanMode.PEST) Color(0xFFFF9800) else Color(0xFF00E676)).copy(alpha = 0.4f))
+                ) {
+                    Text(
+                        text = "📐 Vertical Leaf",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.Black.copy(alpha = 0.70f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        text = "📏 10-15 cm Away",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.Black.copy(alpha = 0.70f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        text = "💡 Clear Lighting",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
     }
 }

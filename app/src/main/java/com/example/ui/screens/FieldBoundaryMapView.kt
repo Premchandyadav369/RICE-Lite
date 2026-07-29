@@ -69,6 +69,7 @@ fun FieldBoundaryMapView(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFFAFAF8))
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

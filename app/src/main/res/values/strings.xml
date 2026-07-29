@@ -1,4 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RICE AgriTech</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_farm">Farm</string>
+    <string name="nav_market">Market</string>
+    <string name="nav_finance">Finance</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_scanner">AI Scanner</string>
+    <string name="select_language">Select Language</string>
+    <string name="active_cultivar">Active Cultivar: BPT 5204 (Samba Mahsuri)</string>
+    <string name="tillering_stage_info">Tillering Stage • Standing Water: 35mm Optimal • Blast Risk: 0.08 (LOW)</string>
+    <string name="diagnose">Diagnose</string>
+    <string name="scan_rice_leaf">Scan Rice Leaf</string>
+    <string name="super_app_title">RICE Super App</string>
+    <string name="weather_advisory">Regional Weather &amp; Crop Advisory</string>
+    <string name="mandi_prices">Agri Marketplace &amp; Bids</string>
+    <string name="pest_radar">Pest &amp; Disease Radar</string>
 </resources>

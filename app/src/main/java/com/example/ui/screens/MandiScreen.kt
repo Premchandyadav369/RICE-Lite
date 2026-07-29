@@ -279,12 +279,16 @@ fun MandiScreen(
                 )
             }
             else -> {
-                Column(modifier = Modifier.weight(1f)) {
-                    // NATIONAL MANDI STATS INDEX ROW
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        // NATIONAL MANDI STATS INDEX ROW
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
             // Overall Index
             Card(
                 modifier = Modifier.weight(1f),
@@ -354,10 +358,9 @@ fun MandiScreen(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // INTERACTIVE MANDI ESTIMATE CALCULATOR CARD
+    }
+    item {
+                        // INTERACTIVE MANDI ESTIMATE CALCULATOR CARD
         var showCalculator by remember { mutableStateOf(false) }
         Card(
             modifier = Modifier
@@ -639,9 +642,8 @@ fun MandiScreen(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
+    }
+    item {
         // Search bar
         OutlinedTextField(
             value = searchQuery,
@@ -664,11 +666,10 @@ fun MandiScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("mandi_search_input")
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // State filter list
+                        )
+                    }
+                    item {
+                        // State filter list
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -691,47 +692,40 @@ fun MandiScreen(
                 }
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // List of prices
-        if (filteredPrices.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    Icons.Default.ShowChart,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                    modifier = Modifier.size(80.dp)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "No matching market prices found.",
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredPrices) { mandiPrice ->
-                    MandiItemCard(mandiPrice = mandiPrice, language = selectedLanguage)
+    if (filteredPrices.isEmpty()) {
+                        item {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Default.ShowChart,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                    modifier = Modifier.size(80.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No matching market prices found.",
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    } else {
+                        items(filteredPrices) { mandiPrice ->
+                            MandiItemCard(mandiPrice = mandiPrice, language = selectedLanguage)
+                        }
+                    }
                 }
             }
         }
     }
-}
-}
-}
 }
 
 @Composable
