@@ -1,3 +1,5 @@
+val geminiApiKey = System.getenv("GEMINI_API_KEY") ?: System.getenv("API_KEY") ?: ""
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -28,7 +30,6 @@ android {
         // Let's retrieve it from environment or use a default placeholder that can be read.
         // Wait! The system guidelines say we can read from .env or inject it.
         // Let's set buildConfigField for GEMINI_API_KEY.
-        val geminiApiKey = System.getenv("GEMINI_API_KEY") ?: ""
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
@@ -41,7 +42,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "GEMINI_API_KEY", "\"AIzaSyDrhxVm1AL2_vEj4BPeOovDWMuQmIijnzo\"")
+            buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         }
     }
     compileOptions {

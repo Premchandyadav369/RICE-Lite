@@ -182,99 +182,79 @@ fun ScannerScreen(
                     }
                 },
                 actions = {
-                    // Top Navigation Bar Language Switcher UI Component (English, Telugu, Hindi)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        modifier = Modifier
-                            .testTag("top_bar_language_switcher")
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .padding(horizontal = 4.dp, vertical = 3.dp)
-                    ) {
-                        listOf(
-                            Triple("EN", "English", "English (English)"),
-                            Triple("TE", "తెలుగు", "Telugu (తెలుగు)"),
-                            Triple("HI", "हिन्दी", "Hindi (हिन्दी)")
-                        ).forEach { (code, label, fullName) ->
-                            val isSelected = selectedLanguage.contains(code, ignoreCase = true) ||
-                                    selectedLanguage.contains(label, ignoreCase = true) ||
-                                    (code == "EN" && selectedLanguage.contains("English", ignoreCase = true)) ||
-                                    (code == "TE" && selectedLanguage.contains("Telugu", ignoreCase = true)) ||
-                                    (code == "HI" && selectedLanguage.contains("Hindi", ignoreCase = true))
-
-                            Surface(
-                                onClick = {
-                                    LanguageUtils.updateAppLocale(context, fullName)
-                                    krishiViewModel.setLanguage(fullName)
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                modifier = Modifier.testTag("lang_toggle_$code")
+                    // Compact Top Bar Language Selector Pill
+                    Box {
+                        val currentLangCode = when {
+                            selectedLanguage.contains("Telugu", true) || selectedLanguage.contains("తెలుగు", true) -> "TE"
+                            selectedLanguage.contains("Hindi", true) || selectedLanguage.contains("హిన్", true) -> "HI"
+                            selectedLanguage.contains("Tamil", true) -> "TA"
+                            selectedLanguage.contains("Kannada", true) -> "KN"
+                            selectedLanguage.contains("Marathi", true) -> "MR"
+                            else -> "EN"
+                        }
+                        
+                        Surface(
+                            onClick = { showLanguageMenu = true },
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier
+                                .testTag("top_bar_language_switcher")
+                                .padding(end = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
-                                    text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp)
+                                    text = "🌐 $currentLangCode",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select Language",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
-                        // Dropdown Arrow for More Regional Languages
-                        Box {
-                            IconButton(
-                                onClick = { showLanguageMenu = true },
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .testTag("lang_menu_dropdown_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = "More Regional Languages",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+                        DropdownMenu(
+                            expanded = showLanguageMenu,
+                            onDismissRequest = { showLanguageMenu = false }
+                        ) {
+                            LanguageUtils.SUPPORTED_LANGUAGES.forEach { langOpt ->
+                                val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
+                                val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
+                                        selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
+                                        selectedLanguage.equals(langOpt.code, ignoreCase = true)
 
-                            DropdownMenu(
-                                expanded = showLanguageMenu,
-                                onDismissRequest = { showLanguageMenu = false }
-                            ) {
-                                LanguageUtils.SUPPORTED_LANGUAGES.forEach { langOpt ->
-                                    val fullLangName = "${langOpt.name} (${langOpt.nativeName})"
-                                    val isSelected = selectedLanguage.contains(langOpt.name, ignoreCase = true) ||
-                                            selectedLanguage.contains(langOpt.nativeName, ignoreCase = true) ||
-                                            selectedLanguage.equals(langOpt.code, ignoreCase = true)
-
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                            ) {
-                                                Text(langOpt.flag, fontSize = 16.sp)
-                                                Column {
-                                                    Text(langOpt.nativeName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                                    Text(langOpt.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                }
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(langOpt.flag, fontSize = 16.sp)
+                                            Column {
+                                                Text(langOpt.nativeName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                Text(langOpt.name, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
-                                        },
-                                        trailingIcon = {
-                                            if (isSelected) {
-                                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                            }
-                                        },
-                                        onClick = {
-                                            LanguageUtils.updateAppLocale(context, fullLangName)
-                                            krishiViewModel.setLanguage(fullLangName)
-                                            showLanguageMenu = false
                                         }
-                                    )
-                                }
+                                    },
+                                    trailingIcon = {
+                                        if (isSelected) {
+                                            Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                        }
+                                    },
+                                    onClick = {
+                                        LanguageUtils.updateAppLocale(context, fullLangName)
+                                        krishiViewModel.setLanguage(fullLangName)
+                                        showLanguageMenu = false
+                                    }
+                                )
                             }
                         }
                     }
@@ -814,85 +794,15 @@ fun CameraView(
         }
 
         // Bottom Camera Action Controls
-        Box(
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 36.dp)
-                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Gallery Selector (Left Side)
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onOpenGallery)
-                    .testTag("gallery_picker_button"),
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = CircleShape,
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Choose from Gallery",
-                        tint = Color.White
-                    )
-                }
-            }
-
-            // Central Shutter Button with outer pulse glow
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(80.dp)
-                    .background(Color.White.copy(alpha = 0.25f), CircleShape)
-                    .padding(6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            if (isCapturing) Color(0xFF00E676) else Color.White,
-                            CircleShape
-                        )
-                        .clickable {
-                            if (!isCapturing) {
-                                isCapturing = true
-                                capturePhoto(
-                                    imageCapture = imageCapture,
-                                    executor = cameraExecutor,
-                                    onSuccess = { bitmap ->
-                                        isCapturing = false
-                                        onImageCaptured(bitmap)
-                                    },
-                                    onError = {
-                                        isCapturing = false
-                                    }
-                                )
-                            }
-                        }
-                        .testTag("shutter_button"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isCapturing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
-                            color = Color.White,
-                            strokeWidth = 3.dp
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(58.dp)
-                                .border(2.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
-                        )
-                    }
-                }
-            }
-
             // Info hint
             Text(
                 text = if (isCapturing) "Capturing HQ Crop Photo..." else if (scanMode == CameraScanMode.PEST) "Tap shutter to identify pest" else "Tap shutter to diagnose leaf",
@@ -900,11 +810,85 @@ fun CameraView(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (-28).dp)
                     .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             )
+
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Gallery Selector (Left Side)
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onOpenGallery)
+                        .testTag("gallery_picker_button"),
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = CircleShape,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.4f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Choose from Gallery",
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                // Central Shutter Button with outer pulse glow
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(80.dp)
+                        .background(Color.White.copy(alpha = 0.25f), CircleShape)
+                        .padding(6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                if (isCapturing) Color(0xFF00E676) else Color.White,
+                                CircleShape
+                            )
+                            .clickable {
+                                if (!isCapturing) {
+                                    isCapturing = true
+                                    capturePhoto(
+                                        imageCapture = imageCapture,
+                                        executor = cameraExecutor,
+                                        onSuccess = { bitmap ->
+                                            isCapturing = false
+                                            onImageCaptured(bitmap)
+                                        },
+                                        onError = {
+                                            isCapturing = false
+                                        }
+                                    )
+                                }
+                            }
+                            .testTag("shutter_button"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isCapturing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = Color.White,
+                                strokeWidth = 3.dp
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(58.dp)
+                                    .border(2.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
